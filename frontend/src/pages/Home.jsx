@@ -234,7 +234,7 @@ const templates = [
   { id: 'interview', icon: '💬', name: '면담신청', desc: '파트장·본부장 면담 요청', ready: true },
   { id: 'repair', icon: '🔧', name: '수리요청', desc: '비품·시설 수리 요청', ready: true },
   { id: 'payment2', icon: '🛒', name: '온라인결제', desc: '온라인 구매 결제 요청', ready: true },
-  { id: 'design', icon: '🎨', name: '디자인요청', desc: '이미지 제작 요청', ready: true },
+  { id: 'design', icon: '🎨', name: '디자인요청', desc: '이미지 제작 요청', ready: false },
 ]
 
 const s = {
