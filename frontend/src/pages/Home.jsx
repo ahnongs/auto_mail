@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 
 export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings }) {
   const [showSettings, setShowSettings] = useState(false)
@@ -6,31 +6,6 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
 
   const handleSave = () => { onSaveSettings(draft); setShowSettings(false) }
-
-  // 설정 모달 열려있을 때 Ctrl+V로 로고 붙여넣기
-  const handlePasteLogo = useCallback((e) => {
-    if (!showSettings) return
-    const items = e.clipboardData?.items
-    if (!items) return
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        const f = item.getAsFile()
-        const reader = new FileReader()
-        reader.onload = ev => {
-          const [meta, data] = ev.target.result.split(',')
-          set('logoImageData', data)
-          set('logoImageType', meta.match(/:(.*?);/)[1])
-        }
-        reader.readAsDataURL(f)
-        break
-      }
-    }
-  }, [showSettings])
-
-  useEffect(() => {
-    window.addEventListener('paste', handlePasteLogo)
-    return () => window.removeEventListener('paste', handlePasteLogo)
-  }, [handlePasteLogo])
 
   const isSettingsEmpty = !settings.managerEmail || !settings.ceoEmail || !settings.directorEmail
 
@@ -161,7 +136,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                   value={draft.sigPhone} onChange={e => set('sigPhone', e.target.value)} />
               </Field>
               <Field label="회사 로고 이미지">
-                <div style={s.sigDesc}>파일 선택 또는 로고 이미지 Ctrl+V 붙여넣기</div>
+                <div style={s.sigDesc}>파일 선택으로 로고 이미지를 업로드하세요</div>
                 {draft.logoImageData ? (
                   <div>
                     <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
