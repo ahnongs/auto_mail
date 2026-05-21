@@ -138,6 +138,8 @@ class MailRequest(BaseModel):
     signatureText: str = ""
     signatureHtml: str = ""
     bodyHtml: str = ""
+    bodyImageData: str = ""
+    bodyImageType: str = ""
 
 
 @app.post("/mail/send")
@@ -160,8 +162,9 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
         service = build("gmail", "v1", credentials=creds)
 
         has_logo = bool(req.signatureImageData)
+        has_body_img = bool(req.bodyImageData)
         has_html_sig = bool(req.signatureHtml or req.signatureImageData)
-        needs_html = has_html_sig or bool(req.bodyHtml)
+        needs_html = has_html_sig or bool(req.bodyHtml) or has_body_img
         has_attachment = bool(req.attachmentData)
 
         def build_html():
@@ -188,6 +191,8 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     f'<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
                     f'<div style="font-size:13px;color:#555">{sig}</div>'
                 )
+            if has_body_img:
+                parts.append('<br><img src="cid:body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
             if has_logo:
                 parts.append('<br><img src="cid:signature_img" style="max-height:80px">')
             return "".join(parts)
@@ -197,14 +202,21 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             alt.attach(MIMEText(req.body, "plain", "utf-8"))
             alt.attach(MIMEText(build_html(), "html", "utf-8"))
 
-            if has_logo:
+            if has_logo or has_body_img:
                 content = MIMEMultipart("related")
                 content.attach(alt)
-                img_data = base64.b64decode(req.signatureImageData)
-                img_part = MIMEImage(img_data, _subtype=req.signatureImageType.split("/")[-1])
-                img_part.add_header("Content-ID", "<signature_img>")
-                img_part.add_header("Content-Disposition", "inline")
-                content.attach(img_part)
+                if has_body_img:
+                    bimg_data = base64.b64decode(req.bodyImageData)
+                    bimg_part = MIMEImage(bimg_data, _subtype=req.bodyImageType.split("/")[-1])
+                    bimg_part.add_header("Content-ID", "<body_img>")
+                    bimg_part.add_header("Content-Disposition", "inline")
+                    content.attach(bimg_part)
+                if has_logo:
+                    img_data = base64.b64decode(req.signatureImageData)
+                    img_part = MIMEImage(img_data, _subtype=req.signatureImageType.split("/")[-1])
+                    img_part.add_header("Content-ID", "<signature_img>")
+                    img_part.add_header("Content-Disposition", "inline")
+                    content.attach(img_part)
             else:
                 content = alt
 

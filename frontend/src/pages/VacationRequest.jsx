@@ -96,7 +96,7 @@ export default function VacationRequest({ user, settings, onBack }) {
       t += `1. 휴일 근무 발생일: ${form.overtimeDate ? toKo(form.overtimeDate) + ' 총 1일' : '(미입력)'}\n`
       t += `2. 휴일 근무 사유: ${form.overtimeReason || '(미입력)'}\n`
     }
-    t += `\n■ 휴가 신청 내역 이미지 첨부\n('플렉스 - 휴가 - 예정된 휴가'에서 화면 캡쳐 진행)`
+    t += `\n■ 휴가 신청 내역 이미지 첨부`
     return t
   }, [form, user, periodText])
 
@@ -109,16 +109,24 @@ export default function VacationRequest({ user, settings, onBack }) {
 
     setSending(true)
     try {
-      const attachmentData = await new Promise((resolve) => {
+      const { data: attachmentData, type: attachmentType } = await new Promise((resolve) => {
         const reader = new FileReader()
-        reader.onload = (e) => resolve(e.target.result.split(',')[1])
+        reader.onload = (e) => {
+          const [meta, data] = e.target.result.split(',')
+          resolve({ data, type: meta.match(/:(.*?);/)[1] })
+        }
         reader.readAsDataURL(attachFile)
       })
+
+      const isImage = attachmentType.startsWith('image/')
+
       await api.post('/mail/send', {
         to, cc, subject, body,
         attachmentData,
         attachmentName: attachFile.name,
-        attachmentType: attachFile.type,
+        attachmentType,
+        bodyImageData: isImage ? attachmentData : '',
+        bodyImageType: isImage ? attachmentType : '',
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
