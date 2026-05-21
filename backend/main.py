@@ -11,8 +11,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+from typing import Any, Dict
 import base64
 import os
+import json
 import httpx
 
 load_dotenv()
@@ -116,6 +118,47 @@ def get_me(session: str = Cookie(default=None)):
         }
     except JWTError:
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
+
+
+SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "user_settings.json")
+
+def _load_all():
+    if not os.path.exists(SETTINGS_FILE):
+        return {}
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_all(data: dict):
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def _get_uid(session: str):
+    try:
+        return jwt.decode(session, SECRET_KEY, algorithms=["HS256"])["sub"]
+    except JWTError:
+        raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
+
+
+@app.get("/settings")
+def get_settings(session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    return _load_all().get(uid, {})
+
+
+@app.post("/settings")
+def save_settings(body: Dict[str, Any], session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    data = _load_all()
+    data[uid] = body
+    _save_all(data)
+    return {"status": "ok"}
 
 
 @app.get("/auth/logout")

@@ -14,6 +14,9 @@ node_modules/
 dist/
 .cache/
 
+# User data
+backend/user_settings.json
+
 # Misc
 .DS_Store
 *.log

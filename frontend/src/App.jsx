@@ -55,6 +55,20 @@ export default function App() {
     history.back()
   }
 
+  // 로그인 후 서버에서 계정별 설정 불러오기
+  useEffect(() => {
+    if (!user) return
+    api.get('/settings')
+      .then(res => {
+        if (res.data && Object.keys(res.data).length > 0) {
+          const merged = { ...DEFAULT_SETTINGS, ...res.data }
+          setSettings(merged)
+          localStorage.setItem('automail_settings', JSON.stringify(merged))
+        }
+      })
+      .catch(() => {})
+  }, [user])
+
   useEffect(() => {
     if (settings.logoImageData) return
     fetch('/logo.png')
@@ -75,6 +89,7 @@ export default function App() {
   const handleSaveSettings = (s) => {
     setSettings(s)
     localStorage.setItem('automail_settings', JSON.stringify(s))
+    api.post('/settings', s).catch(() => {})
   }
 
   const handleLogout = () => { window.location.href = 'http://localhost:8000/auth/logout' }
