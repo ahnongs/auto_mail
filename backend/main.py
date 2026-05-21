@@ -137,6 +137,7 @@ class MailRequest(BaseModel):
     signatureImageType: str = ""
     signatureText: str = ""
     signatureHtml: str = ""
+    bodyHtml: str = ""
 
 
 @app.post("/mail/send")
@@ -160,17 +161,22 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
 
         has_logo = bool(req.signatureImageData)
         has_html_sig = bool(req.signatureHtml or req.signatureImageData)
+        needs_html = has_html_sig or bool(req.bodyHtml)
         has_attachment = bool(req.attachmentData)
 
         def build_html():
-            body_escaped = (req.body
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;"))
-            parts = [
-                f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">'
-                f'{body_escaped}</div>'
-            ]
+            if req.bodyHtml:
+                body_content = req.bodyHtml
+            else:
+                body_escaped = (req.body
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;"))
+                body_content = (
+                    f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">'
+                    f'{body_escaped}</div>'
+                )
+            parts = [body_content]
             if req.signatureHtml:
                 parts.append(
                     '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
@@ -186,7 +192,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                 parts.append('<br><img src="cid:signature_img" style="max-height:80px">')
             return "".join(parts)
 
-        if has_html_sig:
+        if needs_html:
             alt = MIMEMultipart("alternative")
             alt.attach(MIMEText(req.body, "plain", "utf-8"))
             alt.attach(MIMEText(build_html(), "html", "utf-8"))

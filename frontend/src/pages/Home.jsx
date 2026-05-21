@@ -106,6 +106,25 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               </Field>
             </div>
 
+            {/* 계좌 정보 */}
+            <div style={s.section}>
+              <div style={s.sectionTitle}>계좌 정보 (지출결의서 자동입력)</div>
+              <div style={s.sigGrid}>
+                <Field label="은행명">
+                  <input style={s.input} placeholder="예: 국민은행"
+                    value={draft.bank} onChange={e => set('bank', e.target.value)} />
+                </Field>
+                <Field label="예금주">
+                  <input style={s.input} placeholder="예금주 이름"
+                    value={draft.accountHolder} onChange={e => set('accountHolder', e.target.value)} />
+                </Field>
+              </div>
+              <Field label="계좌번호">
+                <input style={s.input} placeholder="000-0000-0000-00"
+                  value={draft.account} onChange={e => set('account', e.target.value)} />
+              </Field>
+            </div>
+
             {/* 메일 서명 */}
             <div style={s.section}>
               <div style={s.sectionTitle}>메일 서명</div>

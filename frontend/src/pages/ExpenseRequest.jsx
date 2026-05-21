@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import axios from 'axios'
+import FileDropZone from '../components/FileDropZone'
 
 const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
@@ -20,21 +21,75 @@ function buildSignatureHtml(settings, userEmail) {
 }
 
 const CATEGORIES = ['복리후생비(식대/회식/간식)', '여비교통비', '접대비', '운반비', '소모품비', '수선비', '지급수수료', '광고선전비']
+const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
-const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '' })
+function buildBodyHtml({ user, settings, items, total, attachFile }) {
+  const tdStyle = 'border:1px solid #ccc;padding:6px 10px;font-size:13px;'
+  const thStyle = tdStyle + 'background:#f0f0f0;font-weight:700;text-align:center;'
+
+  let html = `<div style="font-family:sans-serif;font-size:14px;color:#333;line-height:1.8;">`
+  html += `<p>아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.</p>`
+
+  // 작성자 정보
+  html += `<p style="font-weight:700;margin-top:16px;">■ 작성자 정보</p>`
+  html += `<table style="border-collapse:collapse;width:100%;margin-bottom:16px;">`
+  html += `<tr>`
+  html += `<td style="${thStyle}width:80px;">이름</td><td style="${tdStyle}">${user.name}</td>`
+  html += `<td style="${thStyle}width:80px;">부서</td><td style="${tdStyle}">${settings.dept || '-'}</td>`
+  html += `</tr><tr>`
+  html += `<td style="${thStyle}">계좌정보</td>`
+  html += `<td style="${tdStyle}">${settings.bank || '-'}</td>`
+  html += `<td style="${tdStyle}">${settings.account || '-'}</td>`
+  html += `<td style="${tdStyle}">${settings.accountHolder || '-'}</td>`
+  html += `</tr></table>`
+
+  // 지출 내역
+  html += `<p style="font-weight:700;">■ 지출 내역</p>`
+  html += `<table style="border-collapse:collapse;width:100%;">`
+  html += `<tr>`
+  html += `<th style="${thStyle}width:40px;">NO</th>`
+  html += `<th style="${thStyle}width:90px;">사용 일자</th>`
+  html += `<th style="${thStyle}">구분(목적)</th>`
+  html += `<th style="${thStyle}">세부내용</th>`
+  html += `<th style="${thStyle}width:90px;">금액(원)</th>`
+  html += `<th style="${thStyle}width:80px;">비고</th>`
+  html += `</tr>`
+
+  items.forEach((it, i) => {
+    const amt = it.amount ? `₩${Number(it.amount.replace(/,/g, '')).toLocaleString()}` : '₩0'
+    html += `<tr>`
+    html += `<td style="${tdStyle}text-align:center;">${i + 1}</td>`
+    html += `<td style="${tdStyle}text-align:center;">${it.date || '-'}</td>`
+    html += `<td style="${tdStyle}">${it.category}</td>`
+    html += `<td style="${tdStyle}">${it.detail || '-'}</td>`
+    html += `<td style="${tdStyle}text-align:right;">${amt}</td>`
+    html += `<td style="${tdStyle}">${it.note || ''}</td>`
+    html += `</tr>`
+  })
+
+  html += `<tr>`
+  html += `<td colspan="4" style="${tdStyle}text-align:right;font-weight:700;background:#f0f0f0;">합계</td>`
+  html += `<td style="${tdStyle}text-align:right;font-weight:700;">₩${total.toLocaleString()}</td>`
+  html += `<td style="${tdStyle}"></td>`
+  html += `</tr></table>`
+
+  if (attachFile) {
+    html += `<p style="margin-top:16px;"><strong>&lt;첨부파일&gt;</strong></p>`
+    html += `<p style="margin:0;font-size:13px;">${attachFile.name}</p>`
+  }
+
+  html += `</div>`
+  return html
+}
 
 export default function ExpenseRequest({ user, settings, onBack }) {
-  const [form, setForm] = useState({
-    dept: settings.dept || '',
-    bank: '',
-    account: '',
-  })
+  const [form, setForm] = useState({ dept: settings.dept || '' })
   const [items, setItems] = useState([emptyItem()])
+  const [attachFile, setAttachFile] = useState(null)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setItem = (i, k, v) => setItems(arr => arr.map((it, idx) => idx === i ? { ...it, [k]: v } : it))
   const addItem = () => setItems(arr => [...arr, emptyItem()])
   const removeItem = (i) => setItems(arr => arr.filter((_, idx) => idx !== i))
@@ -44,42 +99,49 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const to = 'request@stardoc1.com'
   const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
 
-  const mmdd = useMemo(() => {
+  const mmdd = (() => {
     const d = new Date()
     return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-  }, [])
+  })()
 
-  const subject = `(지출결의서) ${form.dept || 'OOO파트'} ${user.name} 개인비용 사용의 건 ${mmdd}`
+  const subject = `(지출결의서) ${settings.dept || form.dept || 'OOO파트'} ${user.name} 개인비용 사용의 건 ${mmdd}`
 
-  const body = useMemo(() => {
-    let t = `아래와 같이 개인비용 지출결의서를 제출합니다.\n\n`
+  const plainBody = useMemo(() => {
+    let t = `아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.\n\n`
     t += `■ 작성자 정보\n`
-    t += `  - 이름: ${user.name}\n`
-    t += `  - 부서: ${form.dept || '(미입력)'}\n`
-    t += `  - 계좌: ${form.bank || '(은행)'} ${form.account || '(계좌번호)'}\n\n`
+    t += `  이름: ${user.name} / 부서: ${settings.dept || '(미입력)'}\n`
+    t += `  계좌: ${settings.bank || '-'} ${settings.account || '-'} (${settings.accountHolder || '-'})\n\n`
     t += `■ 지출 내역\n`
-    t += `${'─'.repeat(70)}\n`
-    t += ` No | 일자       | 구분              | 세부내용          | 금액\n`
-    t += `${'─'.repeat(70)}\n`
     items.forEach((it, i) => {
-      const amt = it.amount ? Number(it.amount.replace(/,/g, '')).toLocaleString() + '원' : '-'
-      t += ` ${String(i + 1).padEnd(2)} | ${(it.date || '-').padEnd(10)} | ${it.category.slice(0, 16).padEnd(17)} | ${(it.detail || '-').slice(0, 16).padEnd(17)} | ${amt}\n`
+      const amt = it.amount ? `₩${Number(it.amount.replace(/,/g, '')).toLocaleString()}` : '₩0'
+      t += `  ${i + 1}. [${it.date || '-'}] ${it.category} / ${it.detail || '-'} / ${amt}\n`
     })
-    t += `${'─'.repeat(70)}\n`
-    t += ` 합계: ${total.toLocaleString()}원\n`
+    t += `\n  합계: ₩${total.toLocaleString()}\n`
     return t
-  }, [form, items, user, total])
+  }, [form, items, user, total, settings])
 
   const handleSend = async () => {
     setError('')
-    if (!form.dept) return setError('부서를 입력해주세요.')
-    if (!form.account) return setError('계좌번호를 입력해주세요.')
     if (items.some(it => !it.detail || !it.amount)) return setError('지출 내역을 모두 입력해주세요.')
+    if (!attachFile) return setError('영수증 파일을 첨부해주세요.')
 
     setSending(true)
     try {
+      const attachmentData = await new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = e => resolve(e.target.result.split(',')[1])
+        reader.readAsDataURL(attachFile)
+      })
+
+      const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile })
+
       await api.post('/mail/send', {
-        to, cc, subject, body,
+        to, cc, subject,
+        body: plainBody,
+        bodyHtml,
+        attachmentData,
+        attachmentName: attachFile.name,
+        attachmentType: attachFile.type,
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
@@ -113,6 +175,8 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
       <div style={s.layout}>
         <div style={s.formCol}>
+
+          {/* 작성자 */}
           <div style={s.card}>
             <div style={s.cardTitle}>작성자 정보</div>
             <div style={s.row}>
@@ -121,19 +185,22 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                 <input style={{ ...s.input, background: '#f7f7f7', color: '#aaa' }} value={user.name} readOnly />
               </div>
               <div style={{ flex: 1, marginLeft: 12 }}>
-                <div style={s.sublabel}>부서 <span style={{ color: '#ef4444' }}>*</span></div>
-                <input style={s.input} placeholder="예: 마케팅파트" value={form.dept} onChange={e => set('dept', e.target.value)} />
+                <div style={s.sublabel}>부서</div>
+                <input style={{ ...s.input, background: '#f7f7f7', color: '#aaa' }} value={settings.dept || '(설정에서 입력)'} readOnly />
               </div>
             </div>
-            <div style={{ marginTop: 12 }}>
-              <div style={s.sublabel}>환급 계좌 <span style={{ color: '#ef4444' }}>*</span></div>
-              <div style={s.row}>
-                <input style={{ ...s.input, flex: 1 }} placeholder="은행명" value={form.bank} onChange={e => set('bank', e.target.value)} />
-                <input style={{ ...s.input, flex: 2, marginLeft: 8 }} placeholder="계좌번호" value={form.account} onChange={e => set('account', e.target.value)} />
+            {(settings.bank || settings.account) ? (
+              <div style={{ marginTop: 10, padding: '8px 12px', background: '#f0f0ff', borderRadius: 8, fontSize: 12, color: '#667eea' }}>
+                💳 {settings.bank} {settings.account} ({settings.accountHolder}) — 설정에서 변경 가능
               </div>
-            </div>
+            ) : (
+              <div style={{ marginTop: 10, padding: '8px 12px', background: '#fff8e1', borderRadius: 8, fontSize: 12, color: '#92400e' }}>
+                ⚠️ 계좌 정보가 없어요. 설정(⚙️)에서 먼저 입력해주세요.
+              </div>
+            )}
           </div>
 
+          {/* 지출 내역 */}
           <div style={s.card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={s.cardTitle}>지출 내역 <span style={{ color: '#ef4444' }}>*</span></div>
@@ -147,16 +214,16 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                 </div>
                 <div style={s.row}>
                   <div style={{ flex: 1 }}>
-                    <div style={s.sublabel}>일자</div>
+                    <div style={s.sublabel}>사용 일자</div>
                     <input type="date" style={s.input} value={it.date} onChange={e => setItem(i, 'date', e.target.value)} />
                   </div>
                   <div style={{ flex: 1, marginLeft: 8 }}>
-                    <div style={s.sublabel}>금액</div>
+                    <div style={s.sublabel}>금액 (원)</div>
                     <input style={s.input} placeholder="0" value={it.amount} onChange={e => setItem(i, 'amount', e.target.value)} />
                   </div>
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  <div style={s.sublabel}>구분</div>
+                  <div style={s.sublabel}>구분(목적)</div>
                   <select style={s.input} value={it.category} onChange={e => setItem(i, 'category', e.target.value)}>
                     {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -165,11 +232,21 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                   <div style={s.sublabel}>세부내용</div>
                   <input style={s.input} placeholder="예: 팀 점심 식사" value={it.detail} onChange={e => setItem(i, 'detail', e.target.value)} />
                 </div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={s.sublabel}>비고 (선택)</div>
+                  <input style={s.input} placeholder="" value={it.note} onChange={e => setItem(i, 'note', e.target.value)} />
+                </div>
               </div>
             ))}
-            <div style={{ textAlign: 'right', fontSize: 14, fontWeight: 700, color: '#333', marginTop: 4 }}>
-              합계: {total.toLocaleString()}원
+            <div style={{ textAlign: 'right', fontSize: 15, fontWeight: 700, color: '#333', marginTop: 4, paddingRight: 4 }}>
+              합계: ₩{total.toLocaleString()}
             </div>
+          </div>
+
+          {/* 영수증 첨부 */}
+          <div style={{ ...s.card, ...(error.includes('영수증') ? { border: '1.5px solid #fca5a5' } : {}) }}>
+            <div style={s.cardTitle}>📎 영수증 첨부 <span style={{ color: '#ef4444' }}>*</span></div>
+            <FileDropZone file={attachFile} onChange={setAttachFile} />
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
@@ -178,14 +255,16 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           </button>
         </div>
 
+        {/* 미리보기 */}
         <div style={s.previewCol}>
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={s.pVal}>{to}</span></div>
             <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{cc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
+            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
-            <pre style={s.preBody}>{body}</pre>
+            <pre style={s.preBody}>{plainBody}</pre>
           </div>
         </div>
       </div>
