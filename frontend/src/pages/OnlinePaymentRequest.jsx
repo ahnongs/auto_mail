@@ -31,6 +31,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
     receiverName: '',
     receiverPhone: '',
     managerApproved: '승인 완료',
+    extraCc: '',
     notes: '',
   })
   const [sending, setSending] = useState(false)
@@ -39,7 +40,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = 'request@stardoc1.com'
-  const cc = [settings.ceoEmail, settings.managerEmail].filter(Boolean).join(', ')
+  const cc = [settings.ceoEmail, settings.bizManagerEmail, form.extraCc].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {
     const d = new Date()
@@ -149,6 +150,12 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
                 <button key={v} style={{ ...s.optBtn, ...(form.managerApproved === v ? s.optSel : {}) }} onClick={() => set('managerApproved', v)}>{v}</button>
               ))}
             </div>
+          </div>
+
+          <div style={s.card}>
+            <div style={s.cardTitle}>추가 참조 <span style={{ color: '#bbb', fontSize: 12, fontWeight: 400 }}>선택</span></div>
+            <div style={s.sublabel}>프로젝트 관련자 등 추가로 참조할 이메일</div>
+            <input style={s.input} placeholder="예: person@stardoc1.com" value={form.extraCc} onChange={e => set('extraCc', e.target.value)} />
           </div>
 
           <div style={s.card}>

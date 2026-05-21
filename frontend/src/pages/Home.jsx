@@ -100,6 +100,10 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 <input style={s.input} placeholder="본부장@stardoc1.com"
                   value={draft.directorEmail} onChange={e => set('directorEmail', e.target.value)} />
               </Field>
+              <Field label="경영관리 파트장 이메일">
+                <input style={s.input} placeholder="경영관리파트장@stardoc1.com"
+                  value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
+              </Field>
               <Field label="소속 부서">
                 <input style={s.input} placeholder="예: 마케팅파트"
                   value={draft.dept} onChange={e => set('dept', e.target.value)} />
