@@ -1,11 +1,34 @@
 import { useState } from 'react'
 
+const formatPhone = (v) => {
+  const n = v.replace(/\D/g, '').slice(0, 11)
+  if (n.startsWith('02')) {
+    if (n.length <= 2) return n
+    if (n.length <= 5) return n.slice(0, 2) + '-' + n.slice(2)
+    if (n.length <= 9) return n.slice(0, 2) + '-' + n.slice(2, 5) + '-' + n.slice(5)
+    return n.slice(0, 2) + '-' + n.slice(2, 6) + '-' + n.slice(6, 10)
+  }
+  if (n.length <= 3) return n
+  if (n.length <= 7) return n.slice(0, 3) + '-' + n.slice(3)
+  return n.slice(0, 3) + '-' + n.slice(3, 7) + '-' + n.slice(7, 11)
+}
+
+const trimPart = (v) => v.replace(/\s*파트\s*$/, '').trim()
+
 export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings }) {
   const [showSettings, setShowSettings] = useState(false)
   const [draft, setDraft] = useState(settings)
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
 
-  const handleSave = () => { onSaveSettings(draft); setShowSettings(false) }
+  const handleSave = () => {
+    const normalized = {
+      ...draft,
+      dept: draft.dept ? trimPart(draft.dept) + '파트' : '',
+      sigPosition: trimPart(draft.sigPosition || ''),
+    }
+    onSaveSettings(normalized)
+    setShowSettings(false)
+  }
 
   const isSettingsEmpty = !settings.managerEmail || !settings.ceoEmail || !settings.directorEmail
 
@@ -80,7 +103,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                   value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
               </Field>
               <Field label="소속 부서">
-                <input style={s.input} placeholder="예: 마케팅파트"
+                <input style={s.input} placeholder="예: 마케팅기획디자인개발 (파트 자동추가)"
                   value={draft.dept} onChange={e => set('dept', e.target.value)} />
               </Field>
             </div>
@@ -119,7 +142,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 </Field>
               </div>
               <Field label="파트명">
-                <input style={s.input} placeholder="예: 마케팅기획디자인개발"
+                <input style={s.input} placeholder="예: 마케팅기획디자인개발 (파트 자동추가)"
                   value={draft.sigPosition} onChange={e => set('sigPosition', e.target.value)} />
               </Field>
               <Field label="직책">
@@ -133,7 +156,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               </Field>
               <Field label="전화번호">
                 <input style={s.input} placeholder="010-0000-0000"
-                  value={draft.sigPhone} onChange={e => set('sigPhone', e.target.value)} />
+                  value={draft.sigPhone} onChange={e => set('sigPhone', formatPhone(e.target.value))} />
               </Field>
               <Field label="회사 로고 이미지">
                 <div style={s.sigDesc}>파일 선택으로 로고 이미지를 업로드하세요</div>
