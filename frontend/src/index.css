@@ -29,8 +29,10 @@ button {
 }
 
 /* ── iOS Safe Area (하단 바 짤림 방지) ── */
-.r-modal {
-  padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+@media (max-width: 768px) {
+  .r-modal {
+    max-height: 85dvh !important;
+  }
 }
 
 /* ── 반응형 ── */
