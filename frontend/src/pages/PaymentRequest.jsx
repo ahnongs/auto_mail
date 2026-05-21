@@ -176,7 +176,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
           <div style={s.card}>
             <div style={s.cardTitle}>세금계산서 발행 여부</div>
             <div style={s.sublabel}>세금계산서 발행여부</div>
-            <input style={s.input} placeholder="예: 발행 필요 / 발행 불필요 / 발행 완료" value={form.taxInvoice} onChange={e => set('taxInvoice', e.target.value)} />
+            <input style={s.input} value={form.taxInvoice} onChange={e => set('taxInvoice', e.target.value)} />
           </div>
 
           <div style={s.card}>
