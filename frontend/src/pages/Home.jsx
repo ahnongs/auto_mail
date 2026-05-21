@@ -188,21 +188,22 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               {(draft.sigNameKo || draft.sigPosition) && (
                 <div style={s.sigPreview}>
                   <div style={s.sigPreviewLabel}>미리보기</div>
-                  <div style={{ fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.9 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 4, marginBottom: 2 }}>
-                      {draft.sigNameKo}
-                      {draft.sigNameEn && <span style={{ fontSize: 13, fontWeight: 400, color: '#555', letterSpacing: 0, marginLeft: 10 }}>{draft.sigNameEn}</span>}
-                    </div>
-                    {draft.sigPosition && <div style={{ fontSize: 12, color: '#444', marginBottom: 6 }}>{draft.sigPosition}</div>}
-                    <div style={{ fontSize: 12, color: '#333', lineHeight: 2 }}>
-                      {draft.sigPhone && <div>T. {draft.sigPhone}</div>}
-                      <div>E. {user.email}</div>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>서울 강남구 테헤란로57길 21 2층 | 02-533-7776</div>
-                    {draft.sigExtra && <div style={{ fontSize: 11, color: '#aaa' }}>{draft.sigExtra}</div>}
+                  <div style={{ fontFamily: "'Noto Sans',sans-serif", lineHeight: 1.2, color: '#000' }}>
+                    <p style={{ margin: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{draft.sigNameKo}</span>
+                      {draft.sigNameEn && <span style={{ fontSize: 11, fontWeight: 400, marginLeft: 6 }}> {draft.sigNameEn}</span>}
+                    </p>
+                    {draft.sigPosition && <p style={{ margin: 0, fontSize: 13 }}>{draft.sigPosition}</p>}
+                    <br />
+                    {draft.sigPhone && <p style={{ margin: 0, fontSize: 13 }}>T. {draft.sigPhone}</p>}
+                    <p style={{ margin: 0, fontSize: 13 }}>E. {user.email}</p>
+                    <br />
+                    <p style={{ margin: 0, fontSize: 11, color: '#333' }}>서울 강남구 테헤란로57길 21 2층 | 02-533-7776</p>
+                    {draft.sigExtra && <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{draft.sigExtra}</p>}
+                    <br />
                     {draft.logoImageData && (
                       <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
-                        style={{ maxHeight: 50, marginTop: 10, display: 'block' }} alt="로고" />
+                        style={{ height: 20, width: 'auto', display: 'block' }} alt="로고" />
                     )}
                   </div>
                 </div>
