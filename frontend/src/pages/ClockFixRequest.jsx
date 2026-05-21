@@ -160,28 +160,34 @@ export default function ClockFixRequest({ user, settings, onBack }) {
 
           <div style={s.card}>
             <div style={s.cardTitle}>■ 상세 내용</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }} className="r-clock-grid">
-              <div style={s.tableHeader}>구분</div>
-              <div style={s.tableHeader}>시간</div>
-              <div style={s.tableHeader}>플렉스 현황</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }} className="r-clock-grid">
-              <div style={s.tableLabel}>실제 출근시간</div>
-              <input type="time" style={s.input} value={form.actualIn} onChange={e => set('actualIn', e.target.value)} />
-              <select style={s.input} value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)}>
-                <option value="">선택</option>
-                <option value="체크완료">체크완료</option>
-                <option value="미처리">미처리</option>
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }} className="r-clock-grid">
-              <div style={s.tableLabel}>실제 퇴근시간</div>
-              <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
-              <select style={s.input} value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)}>
-                <option value="">선택</option>
-                <option value="체크완료">체크완료</option>
-                <option value="미처리">미처리</option>
-              </select>
+            <div className="r-clock-table">
+              <div className="r-clock-header">
+                <div style={s.tableHeader}>구분</div>
+                <div style={s.tableHeader}>시간</div>
+                <div style={s.tableHeader}>플렉스 현황</div>
+              </div>
+              <div className="r-clock-tr">
+                <div style={s.tableLabel} className="r-clock-label">실제 출근시간</div>
+                <div className="r-clock-inputs">
+                  <input type="time" style={s.input} value={form.actualIn} onChange={e => set('actualIn', e.target.value)} />
+                  <select style={s.input} value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)}>
+                    <option value="">선택</option>
+                    <option value="체크완료">체크완료</option>
+                    <option value="미처리">미처리</option>
+                  </select>
+                </div>
+              </div>
+              <div className="r-clock-tr">
+                <div style={s.tableLabel} className="r-clock-label">실제 퇴근시간</div>
+                <div className="r-clock-inputs">
+                  <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
+                  <select style={s.input} value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)}>
+                    <option value="">선택</option>
+                    <option value="체크완료">체크완료</option>
+                    <option value="미처리">미처리</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
