@@ -143,9 +143,18 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                     value={draft.sigNameEn} onChange={e => set('sigNameEn', e.target.value)} />
                 </Field>
               </div>
-              <Field label="직위 / 파트">
-                <input style={s.input} placeholder="콘텐츠제작파트 매니저"
+              <Field label="파트명">
+                <input style={s.input} placeholder="예: 마케팅기획디자인개발"
                   value={draft.sigPosition} onChange={e => set('sigPosition', e.target.value)} />
+              </Field>
+              <Field label="직책">
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['매니저', 'PM', '파트장'].map(r => (
+                    <button key={r} type="button"
+                      style={{ padding: '7px 16px', border: `1.5px solid ${draft.sigRole === r ? '#667eea' : '#e8e8e8'}`, borderRadius: 8, background: draft.sigRole === r ? '#f0f0ff' : '#fff', color: draft.sigRole === r ? '#667eea' : '#555', fontSize: 13, fontWeight: draft.sigRole === r ? 700 : 400, cursor: 'pointer' }}
+                      onClick={() => set('sigRole', draft.sigRole === r ? '' : r)}>{r}</button>
+                  ))}
+                </div>
               </Field>
               <Field label="전화번호">
                 <input style={s.input} placeholder="010-0000-0000"
@@ -193,7 +202,11 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                       <span style={{ fontSize: 14, fontWeight: 700 }}>{draft.sigNameKo}</span>
                       {draft.sigNameEn && <span style={{ fontSize: 11, fontWeight: 400, marginLeft: 6 }}> {draft.sigNameEn}</span>}
                     </p>
-                    {draft.sigPosition && <p style={{ margin: 0, fontSize: 13 }}>{draft.sigPosition}</p>}
+                    {(draft.sigPosition || draft.sigRole) && (
+                      <p style={{ margin: 0, fontSize: 13 }}>
+                        {[draft.sigPosition, draft.sigRole ? `파트 ${draft.sigRole}` : ''].filter(Boolean).join(' ')}
+                      </p>
+                    )}
                     <br />
                     {draft.sigPhone && <p style={{ margin: 0, fontSize: 13 }}>T. {draft.sigPhone}</p>}
                     <p style={{ margin: 0, fontSize: 13 }}>E. {user.email}</p>
