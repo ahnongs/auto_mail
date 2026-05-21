@@ -21,6 +21,14 @@ import os
 import json
 import httpx
 
+try:
+    from supabase import create_client
+    _sb_url = os.getenv("SUPABASE_URL")
+    _sb_key = os.getenv("SUPABASE_SERVICE_KEY")
+    supabase = create_client(_sb_url, _sb_key) if _sb_url and _sb_key else None
+except Exception:
+    supabase = None
+
 load_dotenv()
 
 app = FastAPI()
@@ -89,12 +97,10 @@ async def google_callback(code: str):
 
     # refresh_token 저장 (예약 발송 시 사용)
     if credentials.refresh_token:
-        data = _load_all()
         uid = user_info["id"]
-        if uid not in data:
-            data[uid] = {}
-        data[uid]["refresh_token"] = credentials.refresh_token
-        _save_all(data)
+        existing = _load_user(uid)
+        existing["refresh_token"] = credentials.refresh_token
+        _save_user(uid, existing)
 
     token = jwt.encode(
         {
@@ -139,6 +145,28 @@ _DATA_DIR = os.getenv("DATA_DIR", os.path.dirname(__file__))
 SETTINGS_FILE = os.path.join(_DATA_DIR, "user_settings.json")
 SCHEDULED_FILE = os.path.join(_DATA_DIR, "scheduled_emails.json")
 
+# ── 유저 설정 로드 (Supabase 우선, 파일 폴백) ──
+def _load_user(uid: str) -> dict:
+    if supabase:
+        try:
+            res = supabase.table("user_settings").select("data").eq("uid", uid).execute()
+            if res.data:
+                return res.data[0]["data"] or {}
+        except Exception:
+            pass
+    return _load_all().get(uid, {})
+
+def _save_user(uid: str, data: dict):
+    if supabase:
+        try:
+            supabase.table("user_settings").upsert({"uid": uid, "data": data}).execute()
+            return
+        except Exception:
+            pass
+    all_data = _load_all()
+    all_data[uid] = data
+    _save_all(all_data)
+
 def _load_all():
     if not os.path.exists(SETTINGS_FILE):
         return {}
@@ -178,7 +206,7 @@ def get_settings(session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     uid = _get_uid(session)
-    return _load_all().get(uid, {})
+    return _load_user(uid)
 
 
 @app.post("/settings")
@@ -186,9 +214,9 @@ def save_settings(body: Dict[str, Any], session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     uid = _get_uid(session)
-    data = _load_all()
-    data[uid] = body
-    _save_all(data)
+    existing = _load_user(uid)
+    existing.update(body)
+    _save_user(uid, existing)
     return {"status": "ok"}
 
 
@@ -407,8 +435,6 @@ async def do_send_scheduled():
     now = datetime.now()
     pending = _load_scheduled()
     remaining = []
-    all_settings = _load_all()
-
     for item in pending:
         try:
             send_at = datetime.fromisoformat(item["send_at"])
@@ -420,7 +446,7 @@ async def do_send_scheduled():
             continue
 
         uid = item["uid"]
-        refresh_token = all_settings.get(uid, {}).get("refresh_token")
+        refresh_token = _load_user(uid).get("refresh_token")
         if not refresh_token:
             print(f"[Scheduler] refresh_token 없음 uid={uid}")
             continue
