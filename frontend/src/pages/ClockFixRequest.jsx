@@ -194,12 +194,20 @@ export default function ClockFixRequest({ user, settings, onBack }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
               <div style={s.tableLabel}>실제 출근시간</div>
               <input type="time" style={s.input} value={form.actualIn} onChange={e => set('actualIn', e.target.value)} />
-              <input style={s.input} placeholder="예: 체크완료" value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)} />
+              <select style={s.input} value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)}>
+                <option value="">선택</option>
+                <option value="체크완료">체크완료</option>
+                <option value="미처리">미처리</option>
+              </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
               <div style={s.tableLabel}>실제 퇴근시간</div>
               <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
-              <input style={s.input} placeholder="예: 미처리" value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)} />
+              <select style={s.input} value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)}>
+                <option value="">선택</option>
+                <option value="체크완료">체크완료</option>
+                <option value="미처리">미처리</option>
+              </select>
             </div>
           </div>
 
