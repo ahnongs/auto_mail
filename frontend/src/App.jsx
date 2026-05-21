@@ -15,7 +15,7 @@ const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: tr
 
 const DEFAULT_SETTINGS = {
   managerEmail: '', ceoEmail: '', directorEmail: '', bizManagerEmail: '', dept: '',
-  sigNameKo: '', sigNameEn: '', sigPosition: '', sigPhone: '',
+  sigNameKo: '', sigNameEn: '', sigPosition: '', sigPhone: '', sigExtra: '',
   logoImageData: '', logoImageType: '',
   bank: '', account: '', accountHolder: '',
 }

@@ -151,6 +151,10 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 <input style={s.input} placeholder="010-0000-0000"
                   value={draft.sigPhone} onChange={e => set('sigPhone', e.target.value)} />
               </Field>
+              <Field label="추가 연락처 (홈페이지 등)">
+                <input style={s.input} placeholder="예: james@eszett.co.kr | https://www.startdoctor.co.kr"
+                  value={draft.sigExtra} onChange={e => set('sigExtra', e.target.value)} />
+              </Field>
               <Field label="회사 로고 이미지">
                 <div style={s.sigDesc}>파일 선택 또는 로고 이미지 Ctrl+V 붙여넣기</div>
                 {draft.logoImageData ? (
@@ -184,20 +188,21 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               {(draft.sigNameKo || draft.sigPosition) && (
                 <div style={s.sigPreview}>
                   <div style={s.sigPreviewLabel}>미리보기</div>
-                  <div style={{ borderLeft: '3px solid #667eea', paddingLeft: 12 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>
+                  <div style={{ fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.9 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 4, marginBottom: 2 }}>
                       {draft.sigNameKo}
-                      {draft.sigNameEn && <span style={{ fontSize: 12, fontWeight: 400, color: '#888', marginLeft: 6 }}>{draft.sigNameEn}</span>}
+                      {draft.sigNameEn && <span style={{ fontSize: 13, fontWeight: 400, color: '#555', letterSpacing: 0, marginLeft: 10 }}>{draft.sigNameEn}</span>}
                     </div>
-                    {draft.sigPosition && <div style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{draft.sigPosition}</div>}
-                    <div style={{ marginTop: 6, fontSize: 12, color: '#444', lineHeight: 1.6 }}>
+                    {draft.sigPosition && <div style={{ fontSize: 12, color: '#444', marginBottom: 6 }}>{draft.sigPosition}</div>}
+                    <div style={{ fontSize: 12, color: '#333', lineHeight: 2 }}>
                       {draft.sigPhone && <div>T. {draft.sigPhone}</div>}
                       <div>E. {user.email}</div>
                     </div>
-                    <div style={{ marginTop: 6, fontSize: 11, color: '#aaa' }}>서울 강남구 테헤란로57길 21 2층 | 02-533-7776</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>서울 강남구 테헤란로57길 21 2층 | 02-533-7776</div>
+                    {draft.sigExtra && <div style={{ fontSize: 11, color: '#aaa' }}>{draft.sigExtra}</div>}
                     {draft.logoImageData && (
                       <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
-                        style={{ maxHeight: 40, marginTop: 8 }} alt="로고" />
+                        style={{ maxHeight: 50, marginTop: 10, display: 'block' }} alt="로고" />
                     )}
                   </div>
                 </div>

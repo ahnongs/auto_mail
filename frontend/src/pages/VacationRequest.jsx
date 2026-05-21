@@ -1,3 +1,4 @@
+﻿import { buildSignatureHtml } from '../utils/signature'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 import FileDropZone from '../components/FileDropZone'
@@ -14,24 +15,6 @@ const TYPES = [
 ]
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
-
-function buildSignatureHtml(settings, userEmail) {
-  if (!settings.sigNameKo && !settings.sigPosition) return ''
-  let h = '<div style="font-family:sans-serif;border-left:3px solid #667eea;padding-left:12px">'
-  if (settings.sigNameKo) {
-    h += `<div style="font-size:15px;font-weight:700;color:#222">${settings.sigNameKo}`
-    if (settings.sigNameEn) h += `<span style="font-size:12px;font-weight:400;color:#888;margin-left:6px">${settings.sigNameEn}</span>`
-    h += '</div>'
-  }
-  if (settings.sigPosition) h += `<div style="font-size:12px;color:#555;margin-top:2px">${settings.sigPosition}</div>`
-  h += '<div style="margin-top:6px;font-size:12px;color:#444;line-height:1.6">'
-  if (settings.sigPhone) h += `<div>T. ${settings.sigPhone}</div>`
-  h += `<div>E. ${userEmail}</div>`
-  h += '</div>'
-  h += '<div style="margin-top:6px;font-size:11px;color:#aaa">서울 강남구 테헤란로57길 21 2층 | 02-533-7776</div>'
-  h += '</div>'
-  return h
-}
 
 function toKo(dateStr) {
   if (!dateStr) return ''
