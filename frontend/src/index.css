@@ -48,18 +48,6 @@ input[type="time"] {
   min-height: 44px;
 }
 
-/* ── 출퇴근 변경 상세내용 테이블 ── */
-.r-clock-header,
-.r-clock-tr {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  align-items: center;
-}
-.r-clock-header { margin-bottom: 4px; }
-.r-clock-tr { margin-bottom: 8px; }
-.r-clock-tr:last-child { margin-bottom: 0; }
-.r-clock-inputs { display: contents; }
 
 /* ── 헤더 고정 ── */
 .r-header, .r-home-header {
@@ -143,26 +131,10 @@ input[type="time"] {
     width: 100% !important;
   }
 
-  /* ClockFix 상세내용: 모바일 카드형 레이아웃 */
-  .r-clock-header { display: none !important; }
-  .r-clock-tr {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    padding: 12px 10px !important;
-    background: #f4f4ff !important;
-    border-radius: 8px !important;
-    margin-bottom: 8px !important;
-  }
-  .r-clock-tr:last-child { margin-bottom: 0 !important; }
-  .r-clock-label {
+  /* ClockFix 상세내용: 모바일 열 비율 조정 */
+  .r-clock-table {
+    grid-template-columns: auto 1fr 1fr !important;
+    gap: 6px !important;
     font-size: 12px !important;
-    color: #667eea !important;
-    font-weight: 700 !important;
   }
-  .r-clock-inputs {
-    display: flex !important;
-    gap: 8px !important;
-  }
-  .r-clock-inputs > * { flex: 1 !important; min-width: 0 !important; }
 }
