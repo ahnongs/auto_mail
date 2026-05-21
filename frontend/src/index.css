@@ -14,6 +14,13 @@ button {
   cursor: pointer;
 }
 
+/* ── 모바일 input 확대 방지 (iOS) ── */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* ── 헤더 고정 ── */
 .r-header, .r-home-header {
   position: sticky;
