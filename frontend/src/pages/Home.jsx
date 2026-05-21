@@ -11,7 +11,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
+      <header style={s.header} className="r-home-header">
         <div style={s.headerLeft}>
           <span style={{ fontSize: 22 }}>✉️</span>
           <span style={s.headerTitle}>사내 메일 서비스</span>
@@ -24,7 +24,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
         </div>
       </header>
 
-      <main style={s.main}>
+      <main style={s.main} className="r-main">
         <div style={s.welcome}>
           <h2 style={s.welcomeTitle}>안녕하세요, {user.name}님 👋</h2>
           <p style={s.welcomeSub}>{user.email} · 어떤 메일을 보낼까요?</p>
@@ -39,7 +39,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           </div>
         )}
 
-        <div style={s.grid}>
+        <div style={s.grid} className="r-grid">
           {templates.map(t => (
             <button key={t.id}
               style={{ ...s.card, ...(t.ready ? {} : s.cardDisabled) }}
@@ -57,7 +57,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
       {/* 설정 모달 */}
       {showSettings && (
         <div style={s.overlay} onClick={() => setShowSettings(false)}>
-          <div style={s.modal} onClick={e => e.stopPropagation()}>
+          <div style={s.modal} className="r-modal" onClick={e => e.stopPropagation()}>
             <h2 style={s.modalTitle}>⚙️ 설정</h2>
 
             {/* 수신자 */}

@@ -195,13 +195,13 @@ export default function VacationRequest({ user, settings, onBack }) {
 
   return (
     <div style={s.page}>
-      <header style={s.header}>
+      <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
         <span style={s.headerTitle}>🌴 휴가신청</span>
         <div style={{ width: 60 }} />
       </header>
 
-      <div style={s.layout}>
+      <div style={s.layout} className="r-layout">
         <div style={s.formCol}>
 
           {/* 유형 */}
@@ -355,7 +355,7 @@ export default function VacationRequest({ user, settings, onBack }) {
         </div>
 
         {/* 미리보기 */}
-        <div style={s.previewCol}>
+        <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
             <div style={s.pRow}>
