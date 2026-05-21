@@ -15,6 +15,13 @@ const formatPhone = (v) => {
 
 const trimPart = (v) => v.replace(/\s*파트\s*$/, '').trim()
 
+const formatNameKo = (v) => {
+  const n = v.replace(/\s/g, '')
+  if (n.length === 3) return n[0] + ' ' + n.slice(1)
+  if (n.length === 4) return n.slice(0, 2) + ' ' + n.slice(2)
+  return n
+}
+
 export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings }) {
   const [showSettings, setShowSettings] = useState(false)
   const [draft, setDraft] = useState(settings)
@@ -133,8 +140,8 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               <div style={s.sigDesc}>입력한 내용으로 공식 서명 양식이 자동 생성됩니다.</div>
               <div style={s.sigGrid}>
                 <Field label="이름 (한글)">
-                  <input style={s.input} placeholder="홍 길 동"
-                    value={draft.sigNameKo} onChange={e => set('sigNameKo', e.target.value)} />
+                  <input style={s.input} placeholder="홍 길동"
+                    value={draft.sigNameKo} onChange={e => set('sigNameKo', formatNameKo(e.target.value))} />
                 </Field>
                 <Field label="이름 (영문)">
                   <input style={s.input} placeholder="Gildong Hong"
