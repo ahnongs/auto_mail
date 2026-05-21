@@ -135,8 +135,9 @@ def get_me(session: str = Cookie(default=None)):
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
 
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "user_settings.json")
-SCHEDULED_FILE = os.path.join(os.path.dirname(__file__), "scheduled_emails.json")
+_DATA_DIR = os.getenv("DATA_DIR", os.path.dirname(__file__))
+SETTINGS_FILE = os.path.join(_DATA_DIR, "user_settings.json")
+SCHEDULED_FILE = os.path.join(_DATA_DIR, "scheduled_emails.json")
 
 def _load_all():
     if not os.path.exists(SETTINGS_FILE):
