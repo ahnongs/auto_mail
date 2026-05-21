@@ -20,6 +20,53 @@ function buildSignatureHtml(settings, userEmail) {
   return h
 }
 
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+function formatDate(dateStr) {
+  if (!dateStr) return '(미입력)'
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, '0')}월 ${String(d.getDate()).padStart(2, '0')}일 (${DAYS[d.getDay()]}요일)`
+}
+
+function buildBodyHtml({ user, settings, form }) {
+  const td = 'border:1px solid #ccc;padding:7px 12px;font-size:13px;'
+  const th = td + 'background:#f0f0f0;font-weight:700;text-align:center;'
+
+  const statusStyle = (v) => {
+    if (!v) return td + 'text-align:center;'
+    const lower = v.replace(/\s/g, '')
+    if (lower.includes('완료') || lower.includes('체크')) return td + 'text-align:center;background:#fff9c4;color:#b45309;font-weight:600;'
+    if (lower.includes('미처리') || lower.includes('누락')) return td + 'text-align:center;background:#f5f5f5;color:#888;'
+    return td + 'text-align:center;'
+  }
+
+  let html = `<div style="font-family:sans-serif;font-size:14px;color:#333;line-height:1.8;">`
+  html += `<p>안녕하세요,<br>아래 사유로 인하여 플렉스 출퇴근 시간 입력을 하지 못하여, 변경을 요청드리고자 합니다.<br>확인 부탁드리겠습니다.</p>`
+  html += `<p style="margin-top:8px;">`
+  html += `1. 성명: ${user.name}<br>`
+  html += `2. 부서: ${settings.dept || form.dept || '(미입력)'}<br>`
+  html += `3. 조정희망일자: ${formatDate(form.targetDate)}<br>`
+  html += `4. 조정사유: ${form.reason || '(미입력)'}`
+  html += `</p>`
+
+  html += `<p style="font-weight:700;margin-top:16px;">■ 상세 내용</p>`
+  html += `<table style="border-collapse:collapse;width:100%;max-width:500px;">`
+  html += `<tr><th style="${th}">구분</th><th style="${th}">시간</th><th style="${th}">플렉스 현황</th></tr>`
+  html += `<tr>`
+  html += `<td style="${td}">실제 출근시간</td>`
+  html += `<td style="${td}text-align:center;">${form.actualIn || '-'}</td>`
+  html += `<td style="${statusStyle(form.flexStatusIn)}">${form.flexStatusIn || '-'}</td>`
+  html += `</tr>`
+  html += `<tr>`
+  html += `<td style="${td}">실제 퇴근시간</td>`
+  html += `<td style="${td}text-align:center;">${form.actualOut || '-'}</td>`
+  html += `<td style="${statusStyle(form.flexStatusOut)}">${form.flexStatusOut || '-'}</td>`
+  html += `</tr>`
+  html += `</table>`
+  html += `</div>`
+  return html
+}
+
 export default function ClockFixRequest({ user, settings, onBack }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
@@ -27,8 +74,8 @@ export default function ClockFixRequest({ user, settings, onBack }) {
     reason: '',
     actualIn: '',
     actualOut: '',
-    flexIn: '',
-    flexOut: '',
+    flexStatusIn: '',
+    flexStatusOut: '',
   })
   const [attachFile, setAttachFile] = useState(null)
   const [sending, setSending] = useState(false)
@@ -37,38 +84,32 @@ export default function ClockFixRequest({ user, settings, onBack }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = 'clockinout@stardoc1.com'
-  const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
+  const cc = [settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {
     const d = new Date()
     return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
   }, [])
 
-  const subject = `(출퇴근변경) ${form.dept || '00파트'} ${user.name} 플렉스 출퇴근 변경신청의 건 ${mmdd}`
+  const subject = `(출퇴근변경) ${settings.dept || form.dept || '00파트'} ${user.name} 플렉스 출퇴근 변경신청의 건 ${mmdd}`
 
-  const body = useMemo(() => {
-    let t = `아래와 같이 플렉스 출퇴근 변경을 신청합니다.\n\n`
+  const plainBody = useMemo(() => {
+    let t = `안녕하세요,\n아래 사유로 인하여 플렉스 출퇴근 시간 입력을 하지 못하여, 변경을 요청드리고자 합니다.\n확인 부탁드리겠습니다.\n\n`
     t += `1. 성명: ${user.name}\n`
-    t += `2. 부서: ${form.dept || '(미입력)'}\n`
-    t += `3. 조정 희망 일자: ${form.targetDate || '(미입력)'}\n`
-    t += `4. 조정 사유: ${form.reason || '(미입력)'}\n\n`
-    t += `5. 출퇴근 현황\n`
-    t += `${'─'.repeat(40)}\n`
-    t += `  구분       | 출근       | 퇴근\n`
-    t += `${'─'.repeat(40)}\n`
-    t += `  실제 시간  | ${(form.actualIn || '-').padEnd(10)} | ${form.actualOut || '-'}\n`
-    t += `  플렉스 현황| ${(form.flexIn || '-').padEnd(10)} | ${form.flexOut || '-'}\n`
-    t += `${'─'.repeat(40)}\n`
-    if (attachFile) t += `\n■ 플렉스 캡처 이미지 첨부`
+    t += `2. 부서: ${settings.dept || form.dept || '(미입력)'}\n`
+    t += `3. 조정희망일자: ${formatDate(form.targetDate)}\n`
+    t += `4. 조정사유: ${form.reason || '(미입력)'}\n\n`
+    t += `■ 상세 내용\n`
+    t += `  실제 출근시간: ${form.actualIn || '-'} / 플렉스 현황: ${form.flexStatusIn || '-'}\n`
+    t += `  실제 퇴근시간: ${form.actualOut || '-'} / 플렉스 현황: ${form.flexStatusOut || '-'}\n`
     return t
-  }, [form, user, attachFile])
+  }, [form, user, settings])
 
   const handleSend = async () => {
     setError('')
-    if (!form.dept) return setError('부서를 입력해주세요.')
     if (!form.targetDate) return setError('조정 희망 일자를 선택해주세요.')
     if (!form.reason) return setError('조정 사유를 입력해주세요.')
-    if (!attachFile) return setError('플렉스 화면 캡처 이미지를 첨부해주세요.')
+    if (!attachFile) return setError('플렉스 화면 캡처를 첨부해주세요.')
 
     setSending(true)
     try {
@@ -77,8 +118,11 @@ export default function ClockFixRequest({ user, settings, onBack }) {
         reader.onload = e => resolve(e.target.result.split(',')[1])
         reader.readAsDataURL(attachFile)
       })
+      const bodyHtml = buildBodyHtml({ user, settings, form })
       await api.post('/mail/send', {
-        to, cc, subject, body,
+        to, cc, subject,
+        body: plainBody,
+        bodyHtml,
         attachmentData,
         attachmentName: attachFile.name,
         attachmentType: attachFile.type,
@@ -123,8 +167,8 @@ export default function ClockFixRequest({ user, settings, onBack }) {
                 <input style={{ ...s.input, background: '#f7f7f7', color: '#aaa' }} value={user.name} readOnly />
               </div>
               <div style={{ flex: 1, marginLeft: 12 }}>
-                <div style={s.sublabel}>부서 <span style={{ color: '#ef4444' }}>*</span></div>
-                <input style={s.input} placeholder="예: 마케팅파트" value={form.dept} onChange={e => set('dept', e.target.value)} />
+                <div style={s.sublabel}>부서</div>
+                <input style={{ ...s.input, background: '#f7f7f7', color: '#aaa' }} value={settings.dept || '(설정에서 입력)'} readOnly />
               </div>
             </div>
           </div>
@@ -133,24 +177,29 @@ export default function ClockFixRequest({ user, settings, onBack }) {
             <div style={s.cardTitle}>변경 정보</div>
             <div style={s.sublabel}>조정 희망 일자 <span style={{ color: '#ef4444' }}>*</span></div>
             <input type="date" style={s.input} value={form.targetDate} onChange={e => set('targetDate', e.target.value)} />
+            {form.targetDate && (
+              <div style={{ marginTop: 6, fontSize: 12, color: '#667eea' }}>{formatDate(form.targetDate)}</div>
+            )}
             <div style={{ ...s.sublabel, marginTop: 12 }}>조정 사유 <span style={{ color: '#ef4444' }}>*</span></div>
-            <textarea style={s.textarea} rows={3} placeholder="출퇴근 변경 사유를 입력해주세요" value={form.reason} onChange={e => set('reason', e.target.value)} />
+            <textarea style={s.textarea} rows={2} placeholder="예: 퇴근 시 착오누락" value={form.reason} onChange={e => set('reason', e.target.value)} />
           </div>
 
           <div style={s.card}>
-            <div style={s.cardTitle}>출퇴근 시간 비교</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 12, color: '#888', fontWeight: 600, marginBottom: 6, paddingLeft: 2 }}>
-              <span></span><span>출근</span><span>퇴근</span>
+            <div style={s.cardTitle}>■ 상세 내용</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div style={s.tableHeader}>구분</div>
+              <div style={s.tableHeader}>시간</div>
+              <div style={s.tableHeader}>플렉스 현황</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 600, color: '#555' }}>실제 시간</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div style={s.tableLabel}>실제 출근시간</div>
               <input type="time" style={s.input} value={form.actualIn} onChange={e => set('actualIn', e.target.value)} />
-              <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
+              <input style={s.input} placeholder="예: 체크완료" value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 600, color: '#555' }}>플렉스 현황</div>
-              <input type="time" style={s.input} value={form.flexIn} onChange={e => set('flexIn', e.target.value)} />
-              <input type="time" style={s.input} value={form.flexOut} onChange={e => set('flexOut', e.target.value)} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <div style={s.tableLabel}>실제 퇴근시간</div>
+              <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
+              <input style={s.input} placeholder="예: 미처리" value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)} />
             </div>
           </div>
 
@@ -173,7 +222,7 @@ export default function ClockFixRequest({ user, settings, onBack }) {
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
             {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
-            <pre style={s.preBody}>{body}</pre>
+            <pre style={s.preBody}>{plainBody}</pre>
           </div>
         </div>
       </div>
@@ -194,8 +243,10 @@ const s = {
   cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
   sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
   row: { display: 'flex', gap: 0 },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
+  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
   textarea: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
+  tableHeader: { fontSize: 12, fontWeight: 700, color: '#667eea', padding: '6px 0', borderBottom: '1.5px solid #e8e8ff' },
+  tableLabel: { fontSize: 13, fontWeight: 600, color: '#444', display: 'flex', alignItems: 'center' },
   error: { background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' },
   btnPrimary: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
   successCard: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
