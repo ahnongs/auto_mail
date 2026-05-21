@@ -1,4 +1,5 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 import FileDropZone from '../components/FileDropZone'
@@ -37,6 +38,8 @@ export default function VacationRequest({ user, settings, onBack }) {
     overtimeDate: '', overtimeReason: '',
   })
   const [attachFile, setAttachFile] = useState(null)
+  const [scheduleOpt, setScheduleOpt] = useState({ enabled: false, time: '18:00' })
+  const [scheduleResult, setScheduleResult] = useState(null) // 등록된 send_at
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -45,8 +48,11 @@ export default function VacationRequest({ user, settings, onBack }) {
   const selectedType = TYPES.find(t => t.id === form.type)
   const isMulti = selectedType?.multiDay && form.endDate && form.endDate > form.startDate
   const days = isMulti ? dayCount(form.startDate, form.endDate) : 1
-  const to = settings.managerEmail
-  const cc = [settings.ceoEmail, settings.directorEmail].filter(Boolean).join(', ')
+  const isManager = settings.sigRole !== '파트장'
+  const to = isManager ? settings.managerEmail : settings.directorEmail
+  const cc = isManager
+    ? [settings.ceoEmail, settings.directorEmail].filter(Boolean).join(', ')
+    : [settings.ceoEmail].filter(Boolean).join(', ')
 
   const periodText = useMemo(() => {
     if (!form.startDate) return '날짜를 선택해주세요'
@@ -57,6 +63,20 @@ export default function VacationRequest({ user, settings, onBack }) {
     if (form.type === '시간차') return `${dateStr} 총 1시간`
     return `${dateStr} 총 1일`
   }, [form.startDate, form.endDate, form.type, isMulti, days])
+
+  const dayBefore = useMemo(() => {
+    if (!form.startDate) return null
+    const d = new Date(form.startDate + 'T00:00:00')
+    d.setDate(d.getDate() - 1)
+    const yy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yy}-${mm}-${dd}`
+  }, [form.startDate])
+
+  const scheduleSendAt = scheduleOpt.enabled && dayBefore
+    ? `${dayBefore}T${scheduleOpt.time}:00`
+    : null
 
   const subject = useMemo(() => {
     if (!form.startDate) return `(휴가신청) 26년 00월 00일 ${user.name} 휴가사용의 건`
@@ -103,7 +123,7 @@ export default function VacationRequest({ user, settings, onBack }) {
 
       const isImage = attachmentType.startsWith('image/')
 
-      await api.post('/mail/send', {
+      const sendRes = await api.post('/mail/send', {
         to, cc, subject, body,
         attachmentData,
         attachmentName: attachFile.name,
@@ -114,6 +134,39 @@ export default function VacationRequest({ user, settings, onBack }) {
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
       })
+
+      // 예약 메일 등록
+      if (scheduleOpt.enabled && scheduleSendAt) {
+        try {
+          const dept = settings.dept || form.dept || ''
+          const coverBody = [
+            `안녕하세요, ${dept} ${user.name}, ${form.type} 사용 승인 건 공유드립니다.`,
+            ``,
+            `- 일시 및 시간: ${periodText}`,
+            ``,
+            `감사합니다.`,
+          ].join('\n')
+
+          await api.post('/mail/schedule', {
+            send_at: scheduleSendAt,
+            to: R.leave,
+            cc: '',
+            subject: `Fwd: ${subject}`,
+            body: coverBody,
+            cover_body: coverBody,
+            original_message_id: sendRes.data.message_id || '',
+            fwd_body_image_data: isImage ? attachmentData : '',
+            fwd_body_image_type: isImage ? attachmentType : '',
+            signatureHtml: buildSignatureHtml(settings, user.email),
+            signatureImageData: settings.logoImageData || '',
+            signatureImageType: settings.logoImageType || '',
+          })
+          setScheduleResult(scheduleSendAt)
+        } catch (e) {
+          console.error('예약 등록 실패:', e)
+        }
+      }
+
       setSent(true)
     } catch (e) {
       setError('발송 실패: ' + (e.response?.data?.detail || e.message))
@@ -127,7 +180,15 @@ export default function VacationRequest({ user, settings, onBack }) {
       <div style={s.successCard}>
         <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
         <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{to}에게 전송됐어요.</p>
+        <p style={{ color: '#888', marginBottom: scheduleResult ? 12 : 24 }}>{to}에게 전송됐어요.</p>
+        {scheduleResult && (
+          <div style={{ background: '#f0fff4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#15803d', textAlign: 'left' }}>
+            📅 사전 알림 예약 완료<br />
+            <span style={{ fontSize: 12, color: '#166534' }}>
+              {dayBefore} {scheduleOpt.time} → {R.leave}로 자동 발송 예정
+            </span>
+          </div>
+        )}
         <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
       </div>
     </div>
@@ -249,6 +310,41 @@ export default function VacationRequest({ user, settings, onBack }) {
               플렉스 앱 → 휴가 → 예정된 휴가 화면을 캡처해서 첨부해주세요.
             </div>
             <FileDropZone file={attachFile} onChange={setAttachFile} />
+          </div>
+
+          {/* 하루 전날 사전 알림 예약 */}
+          <div style={{ ...s.card, background: '#f0fff4', border: '1.5px solid #bbf7d0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: scheduleOpt.enabled ? 12 : 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>📅 하루 전날 사전 알림 예약</div>
+              <button
+                style={{ background: scheduleOpt.enabled ? '#22c55e' : '#d1d5db', color: '#fff', border: 'none', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                onClick={() => setScheduleOpt(o => ({ ...o, enabled: !o.enabled }))}>
+                {scheduleOpt.enabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
+            {scheduleOpt.enabled && (
+              <>
+                <div style={s.sublabel}>발송 시각</div>
+                <select style={s.input} value={scheduleOpt.time}
+                  onChange={e => setScheduleOpt(o => ({ ...o, time: e.target.value }))}>
+                  {Array.from({ length: 14 }, (_, i) => {
+                    const h = i + 7
+                    const label = h < 12 ? `오전 ${h}:00` : h === 12 ? '오후 12:00' : `오후 ${h - 12}:00`
+                    const val = `${String(h).padStart(2, '0')}:00`
+                    return <option key={val} value={val}>{label}</option>
+                  })}
+                </select>
+                {dayBefore ? (
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#15803d', fontWeight: 500 }}>
+                    📬 {dayBefore} {scheduleOpt.time}에 {R.leave}로 자동 발송
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#f59e0b' }}>
+                    ⚠️ 휴가 날짜를 먼저 선택해주세요.
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}

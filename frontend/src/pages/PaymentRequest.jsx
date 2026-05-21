@@ -1,4 +1,5 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 import FileDropZone from '../components/FileDropZone'
@@ -26,7 +27,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
   const [error, setError] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const to = 'request@stardoc1.com'
+  const to = R.request
   const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleRequest
 from googleapiclient.discovery import build
 from jose import jwt, JWTError
 from dotenv import load_dotenv
@@ -12,6 +13,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
 from typing import Any, Dict
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime
+import uuid
 import base64
 import os
 import json
@@ -40,6 +44,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.readonly",
 ]
 
 
@@ -82,6 +87,15 @@ async def google_callback(code: str):
         )
     user_info = resp.json()
 
+    # refresh_token 저장 (예약 발송 시 사용)
+    if credentials.refresh_token:
+        data = _load_all()
+        uid = user_info["id"]
+        if uid not in data:
+            data[uid] = {}
+        data[uid]["refresh_token"] = credentials.refresh_token
+        _save_all(data)
+
     token = jwt.encode(
         {
             "sub": user_info["id"],
@@ -121,6 +135,7 @@ def get_me(session: str = Cookie(default=None)):
 
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "user_settings.json")
+SCHEDULED_FILE = os.path.join(os.path.dirname(__file__), "scheduled_emails.json")
 
 def _load_all():
     if not os.path.exists(SETTINGS_FILE):
@@ -134,6 +149,20 @@ def _load_all():
 def _save_all(data: dict):
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+def _load_scheduled():
+    if not os.path.exists(SCHEDULED_FILE):
+        return []
+    try:
+        with open(SCHEDULED_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def _save_scheduled(data: list):
+    with open(SCHEDULED_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 
 def _get_uid(session: str):
     try:
@@ -292,8 +321,254 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             msg["cc"] = req.cc
 
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-        service.users().messages().send(userId="me", body={"raw": raw}).execute()
+        result = service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
-        return {"status": "ok"}
+        return {"status": "ok", "message_id": result.get("id", "")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─────────────────────────────────────────────
+# 예약 메일
+# ─────────────────────────────────────────────
+
+class ScheduleMailRequest(BaseModel):
+    send_at: str  # "2026-05-20T09:00:00"
+    to: str
+    cc: str = ""
+    subject: str
+    body: str
+    cover_body: str = ""           # 전달 메일의 새 본문 (커버 텍스트)
+    original_message_id: str = ""  # 진짜 전달용 Gmail 원본 메시지 ID
+    fwd_body_image_data: str = ""  # 원본 첨부 이미지 (플렉스 캡처)
+    fwd_body_image_type: str = ""
+    signatureHtml: str = ""
+    signatureImageData: str = ""
+    signatureImageType: str = ""
+
+
+@app.post("/mail/schedule")
+def schedule_mail(req: ScheduleMailRequest, session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    item = {
+        "id": str(uuid.uuid4()),
+        "uid": uid,
+        "send_at": req.send_at,
+        "to": req.to,
+        "cc": req.cc,
+        "subject": req.subject,
+        "body": req.body,
+        "cover_body": req.cover_body,
+        "original_message_id": req.original_message_id,
+        "fwd_body_image_data": req.fwd_body_image_data,
+        "fwd_body_image_type": req.fwd_body_image_type,
+        "signatureHtml": req.signatureHtml,
+        "signatureImageData": req.signatureImageData,
+        "signatureImageType": req.signatureImageType,
+        "created_at": datetime.now().isoformat(),
+    }
+    scheduled = _load_scheduled()
+    scheduled.append(item)
+    _save_scheduled(scheduled)
+    return {"status": "ok", "id": item["id"]}
+
+
+@app.get("/mail/scheduled")
+def get_scheduled(session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    return [
+        {"id": s["id"], "send_at": s["send_at"], "to": s["to"], "subject": s["subject"]}
+        for s in _load_scheduled() if s["uid"] == uid
+    ]
+
+
+@app.delete("/mail/scheduled/{schedule_id}")
+def delete_scheduled(schedule_id: str, session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    scheduled = _load_scheduled()
+    _save_scheduled([s for s in scheduled if not (s["id"] == schedule_id and s["uid"] == uid)])
+    return {"status": "ok"}
+
+
+# ─────────────────────────────────────────────
+# 스케줄러 (10분마다 예약 메일 확인 후 발송)
+# ─────────────────────────────────────────────
+
+async def do_send_scheduled():
+    from email.mime.image import MIMEImage
+    now = datetime.now()
+    pending = _load_scheduled()
+    remaining = []
+    all_settings = _load_all()
+
+    for item in pending:
+        try:
+            send_at = datetime.fromisoformat(item["send_at"])
+        except Exception:
+            continue
+
+        if send_at > now:
+            remaining.append(item)
+            continue
+
+        uid = item["uid"]
+        refresh_token = all_settings.get(uid, {}).get("refresh_token")
+        if not refresh_token:
+            print(f"[Scheduler] refresh_token 없음 uid={uid}")
+            continue
+
+        try:
+            creds = Credentials(
+                token=None,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=GOOGLE_CLIENT_ID,
+                client_secret=GOOGLE_CLIENT_SECRET,
+            )
+            creds.refresh(GoogleRequest())
+            service = build("gmail", "v1", credentials=creds)
+
+            sig_html = item.get("signatureHtml", "")
+            sig_img_data = item.get("signatureImageData", "")
+            sig_img_type = item.get("signatureImageType", "")
+            fwd_img_data = item.get("fwd_body_image_data", "")
+            fwd_img_type = item.get("fwd_body_image_type", "")
+            original_message_id = item.get("original_message_id", "")
+            cover_body = item.get("cover_body") or item.get("body", "")
+
+            plain_body = item.get("body", "")
+            html_body = None
+
+            # ── 진짜 Gmail 전달 ──
+            if original_message_id:
+                try:
+                    orig = service.users().messages().get(
+                        userId="me", id=original_message_id, format="full"
+                    ).execute()
+                    orig_headers = {h["name"]: h["value"] for h in orig["payload"]["headers"]}
+
+                    def get_plain(payload):
+                        if payload.get("mimeType") == "text/plain":
+                            data = payload.get("body", {}).get("data", "")
+                            return base64.urlsafe_b64decode(data + "==").decode("utf-8", errors="replace") if data else ""
+                        for part in payload.get("parts", []):
+                            r = get_plain(part)
+                            if r: return r
+                        return ""
+
+                    orig_plain = get_plain(orig["payload"])
+                    orig_from  = orig_headers.get("From", "")
+                    orig_date  = orig_headers.get("Date", "")
+                    orig_subj  = orig_headers.get("Subject", "")
+                    orig_to_h  = orig_headers.get("To", "")
+
+                    # plain text
+                    plain_body = (
+                        f"{cover_body}\n\n"
+                        f"---------- Forwarded message ----------\n"
+                        f"보낸사람: {orig_from}\n"
+                        f"날짜: {orig_date}\n"
+                        f"제목: {orig_subj}\n"
+                        f"받는사람: {orig_to_h}\n\n"
+                        f"{orig_plain}"
+                    )
+
+                    # HTML
+                    def esc(s):
+                        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+                    fwd_img_data = item.get("fwd_body_image_data", "")
+                    cover_html = esc(cover_body).replace("\n", "<br>")
+                    orig_html  = esc(orig_plain)
+                    fwd_img_tag = '<br><img src="cid:fwd_body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">' if fwd_img_data else ''
+                    html_body = (
+                        f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">{cover_html}</div>'
+                        f'<br><br>'
+                        f'<div style="border-left:3px solid #ccc;padding-left:12px;color:#555;font-size:13px;">'
+                        f'<div style="margin-bottom:8px;">---------- Forwarded message ----------<br>'
+                        f'보낸사람: {esc(orig_from)}<br>'
+                        f'날짜: {esc(orig_date)}<br>'
+                        f'제목: {esc(orig_subj)}<br>'
+                        f'받는사람: {esc(orig_to_h)}</div>'
+                        f'<pre style="white-space:pre-wrap;font-family:sans-serif;margin:0">{orig_html}</pre>'
+                        f'{fwd_img_tag}'
+                        f'</div>'
+                    )
+
+                except Exception as e:
+                    print(f"[Scheduler] 원본 메일 조회 실패: {e} → 텍스트 포맷으로 대체")
+
+            # ── MIME 메시지 빌드 ──
+            if html_body or sig_html:
+                if html_body is None:
+                    def esc(s): return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    html_body = (
+                        f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">'
+                        f'{esc(plain_body)}</div>'
+                    )
+                if sig_html:
+                    html_body += '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">' + sig_html
+
+                alt = MIMEMultipart("alternative")
+                alt.attach(MIMEText(plain_body, "plain", "utf-8"))
+                alt.attach(MIMEText(html_body, "html", "utf-8"))
+
+                if fwd_img_data or sig_img_data:
+                    msg = MIMEMultipart("related")
+                    msg.attach(alt)
+                    if fwd_img_data:
+                        fi = base64.b64decode(fwd_img_data)
+                        fi_part = MIMEImage(fi, _subtype=fwd_img_type.split("/")[-1])
+                        fi_part.add_header("Content-ID", "<fwd_body_img>")
+                        fi_part.add_header("Content-Disposition", "inline")
+                        msg.attach(fi_part)
+                    if sig_img_data:
+                        img_data = base64.b64decode(sig_img_data)
+                        img_part = MIMEImage(img_data, _subtype=sig_img_type.split("/")[-1])
+                        img_part.add_header("Content-ID", "<signature_img>")
+                        img_part.add_header("Content-Disposition", "inline")
+                        msg.attach(img_part)
+                else:
+                    msg = alt
+            else:
+                msg = MIMEText(plain_body, "plain", "utf-8")
+
+            msg["to"] = item["to"]
+            msg["subject"] = item["subject"]
+            if item.get("cc"):
+                msg["cc"] = item["cc"]
+
+            raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+            service.users().messages().send(userId="me", body={"raw": raw}).execute()
+            print(f"[Scheduler] 발송 완료: {item['subject']}")
+
+        except Exception as e:
+            print(f"[Scheduler] 발송 실패: {e}")
+
+    _save_scheduled(remaining)
+
+
+scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
+
+
+@app.on_event("startup")
+async def startup():
+    scheduler.add_job(
+        do_send_scheduled,
+        "interval",
+        minutes=1,
+        next_run_time=datetime.now(),  # 시작 즉시 첫 실행
+    )
+    scheduler.start()
+    print("[Scheduler] 시작됨 (1분 간격, 즉시 첫 실행)")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    scheduler.shutdown()

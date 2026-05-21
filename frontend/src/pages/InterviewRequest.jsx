@@ -1,4 +1,5 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 
@@ -20,7 +21,7 @@ export default function InterviewRequest({ user, settings, onBack }) {
   const [error, setError] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const to = 'interview@stardoc1.com'
+  const to = R.interview
   const cc = [settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {

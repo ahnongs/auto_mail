@@ -1,4 +1,5 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 
@@ -24,7 +25,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
   const [error, setError] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const to = 'request@stardoc1.com'
+  const to = R.request
   const cc = [settings.ceoEmail, settings.bizManagerEmail, form.extraCc].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {

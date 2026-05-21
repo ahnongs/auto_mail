@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
-import FileDropZone from '../components/FileDropZone'
 
 const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
@@ -62,13 +62,12 @@ export default function ClockFixRequest({ user, settings, onBack }) {
     flexStatusIn: '',
     flexStatusOut: '',
   })
-  const [attachFile, setAttachFile] = useState(null)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const to = 'clockinout@stardoc1.com'
+  const to = R.clockinout
   const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {
@@ -94,23 +93,14 @@ export default function ClockFixRequest({ user, settings, onBack }) {
     setError('')
     if (!form.targetDate) return setError('조정 희망 일자를 선택해주세요.')
     if (!form.reason) return setError('조정 사유를 입력해주세요.')
-    if (!attachFile) return setError('플렉스 화면 캡처를 첨부해주세요.')
 
     setSending(true)
     try {
-      const attachmentData = await new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result.split(',')[1])
-        reader.readAsDataURL(attachFile)
-      })
       const bodyHtml = buildBodyHtml({ user, settings, form })
       await api.post('/mail/send', {
         to, cc, subject,
         body: plainBody,
         bodyHtml,
-        attachmentData,
-        attachmentName: attachFile.name,
-        attachmentType: attachFile.type,
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
@@ -196,11 +186,6 @@ export default function ClockFixRequest({ user, settings, onBack }) {
             </div>
           </div>
 
-          <div style={{ ...s.card, ...(error.includes('캡처') ? { border: '1.5px solid #fca5a5' } : {}) }}>
-            <div style={s.cardTitle}>📎 플렉스 화면 캡처 <span style={{ color: '#ef4444' }}>*</span></div>
-            <FileDropZone file={attachFile} onChange={setAttachFile} />
-          </div>
-
           {error && <div style={s.error}>⚠️ {error}</div>}
           <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
@@ -213,7 +198,6 @@ export default function ClockFixRequest({ user, settings, onBack }) {
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={s.pVal}>{to}</span></div>
             <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{cc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
-            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
             <pre style={s.preBody}>{plainBody}</pre>
           </div>

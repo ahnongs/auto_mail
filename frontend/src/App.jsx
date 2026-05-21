@@ -14,7 +14,7 @@ import DesignRequest from './pages/DesignRequest'
 const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const DEFAULT_SETTINGS = {
-  managerEmail: '', ceoEmail: '', directorEmail: '', bizManagerEmail: '', dept: '',
+  managerEmail: '', ceoEmail: 'james@stardoc1.com', directorEmail: 'soyun@stardoc1.com', bizManagerEmail: 'yunmo@stardoc1.com', dept: '',
   sigNameKo: '', sigNameEn: '', sigPosition: '', sigRole: '', sigPhone: '', sigExtra: '',
   logoImageData: '', logoImageType: '',
   bank: '', account: '', accountHolder: '',

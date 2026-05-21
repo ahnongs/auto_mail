@@ -1,4 +1,5 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
+import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import axios from 'axios'
 import FileDropZone from '../components/FileDropZone'
@@ -20,7 +21,7 @@ const CATEGORY_GUIDE = [
 ]
 const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
-function buildBodyHtml({ user, settings, items, total, attachFile }) {
+function buildBodyHtml({ user, settings, items, total, attachFile, isImage }) {
   const tdStyle = 'border:1px solid #ccc;padding:6px 10px;font-size:13px;'
   const thStyle = tdStyle + 'background:#f0f0f0;font-weight:700;text-align:center;'
 
@@ -72,7 +73,9 @@ function buildBodyHtml({ user, settings, items, total, attachFile }) {
 
   if (attachFile) {
     html += `<p style="margin-top:16px;"><strong>&lt;첨부파일&gt;</strong></p>`
-    html += `<p style="margin:0;font-size:13px;">${attachFile.name}</p>`
+    if (!isImage) {
+      html += `<p style="margin:0;font-size:13px;">${attachFile.name}</p>`
+    }
   }
 
   html += `</div>`
@@ -93,7 +96,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
   const total = items.reduce((s, it) => s + (Number(it.amount.replace(/,/g, '')) || 0), 0)
 
-  const to = 'request@stardoc1.com'
+  const to = R.request
   const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = (() => {
@@ -130,15 +133,18 @@ export default function ExpenseRequest({ user, settings, onBack }) {
         reader.readAsDataURL(attachFile)
       })
 
-      const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile })
+      const isImage = attachFile.type.startsWith('image/')
+      const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
 
       await api.post('/mail/send', {
         to, cc, subject,
         body: plainBody,
         bodyHtml,
-        attachmentData,
-        attachmentName: attachFile.name,
-        attachmentType: attachFile.type,
+        attachmentData: isImage ? '' : attachmentData,
+        attachmentName: isImage ? '' : attachFile.name,
+        attachmentType: isImage ? '' : attachFile.type,
+        bodyImageData: isImage ? attachmentData : '',
+        bodyImageType: isImage ? attachFile.type : '',
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),

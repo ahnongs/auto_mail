@@ -16,6 +16,7 @@ dist/
 
 # User data
 backend/user_settings.json
+backend/scheduled_emails.json
 
 # Misc
 .DS_Store
