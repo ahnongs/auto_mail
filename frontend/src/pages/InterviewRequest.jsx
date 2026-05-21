@@ -19,7 +19,7 @@ function buildSignatureHtml(settings, userEmail) {
   return h
 }
 
-const TARGETS = ['파트장(부서장)', '본부장', '경영지원PM']
+const TARGETS = ['파트장', '본부장', '경영지원 파트장']
 const PURPOSES = ['업무 분장', '사내 고충', '개인 상담', '기타']
 
 export default function InterviewRequest({ user, settings, onBack }) {
