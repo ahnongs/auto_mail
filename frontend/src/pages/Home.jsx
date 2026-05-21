@@ -160,10 +160,6 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 <input style={s.input} placeholder="010-0000-0000"
                   value={draft.sigPhone} onChange={e => set('sigPhone', e.target.value)} />
               </Field>
-              <Field label="추가 연락처 (홈페이지 등)">
-                <input style={s.input} placeholder="예: james@eszett.co.kr | https://www.startdoctor.co.kr"
-                  value={draft.sigExtra} onChange={e => set('sigExtra', e.target.value)} />
-              </Field>
               <Field label="회사 로고 이미지">
                 <div style={s.sigDesc}>파일 선택 또는 로고 이미지 Ctrl+V 붙여넣기</div>
                 {draft.logoImageData ? (
@@ -212,7 +208,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                     <p style={{ margin: 0, fontSize: 13 }}>E. {user.email}</p>
                     <br />
                     <p style={{ margin: 0, fontSize: 11, color: '#333' }}>서울 강남구 테헤란로57길 21 2층 | 02-533-7776</p>
-                    {draft.sigExtra && <p style={{ margin: 0, fontSize: 11, color: '#333' }}>{draft.sigExtra}</p>}
+                    <p style={{ margin: 0, fontSize: 11, color: '#333' }}>james@eszett.co.kr | https://www.startdoctor.co.kr</p>
                     <br />
                     {draft.logoImageData && (
                       <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
