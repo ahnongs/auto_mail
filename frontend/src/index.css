@@ -28,6 +28,11 @@ button {
   z-index: 50;
 }
 
+/* ── iOS Safe Area (하단 바 짤림 방지) ── */
+.r-modal {
+  padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+}
+
 /* ── 반응형 ── */
 @media (max-width: 768px) {
   /* 2단 레이아웃 → 1단 */
