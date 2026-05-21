@@ -28,24 +28,6 @@ button {
   z-index: 50;
 }
 
-/* ── 설정 모달 버튼 항상 보이게 sticky 고정 ── */
-@media (max-width: 768px) {
-  .r-modal {
-    max-height: 90dvh !important;
-    padding-bottom: 0 !important;
-  }
-  .r-modal-actions {
-    position: sticky;
-    bottom: 0;
-    background: #fff;
-    padding: 12px 0 max(16px, env(safe-area-inset-bottom));
-    margin: 0 -24px -24px;
-    padding-left: 24px;
-    padding-right: 24px;
-    border-top: 1px solid #f0f0f0;
-  }
-}
-
 /* ── 반응형 ── */
 @media (max-width: 768px) {
   /* 2단 레이아웃 → 1단 */
@@ -85,19 +67,27 @@ button {
 
   /* 설정 모달 */
   .r-modal {
-    width: 95vw !important;
-    padding: 20px 16px !important;
-    max-height: 92vh !important;
+    width: 92vw !important;
+    max-height: 88dvh !important;
+    overflow-x: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 20px 16px 0 16px !important;
+  }
+
+  /* 저장/취소 버튼: 항상 하단 고정 */
+  .r-modal-actions {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 12px 0 max(16px, env(safe-area-inset-bottom));
+    border-top: 1px solid #f0f0f0;
+    margin-top: 8px;
+    flex-shrink: 0;
   }
 
   /* 홈 메인 패딩 */
   .r-main {
     padding: 20px 14px !important;
-  }
-}
-
-@media (max-width: 400px) {
-  .r-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
