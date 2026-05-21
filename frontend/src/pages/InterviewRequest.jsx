@@ -28,7 +28,6 @@ export default function InterviewRequest({ user, settings, onBack }) {
     target: TARGETS[0],
     purpose: PURPOSES[0],
     preferDate: '',
-    preferTime: '',
     content: '',
   })
   const [sending, setSending] = useState(false)
@@ -52,7 +51,7 @@ export default function InterviewRequest({ user, settings, onBack }) {
     t += `2. 소속 부서: ${form.dept || '(미입력)'}\n`
     t += `3. 요청 대상: ${form.target}\n`
     t += `4. 요청 목적: ${form.purpose}\n`
-    t += `5. 희망 일정: ${form.preferDate || '(미입력)'}${form.preferTime ? ' ' + form.preferTime : ''}\n`
+    t += `5. 희망 일정: ${form.preferDate || '(미입력)'}\n`
     if (form.content) t += `\n6. 면담 내용\n${form.content}\n`
     return t
   }, [form, user])
@@ -128,16 +127,8 @@ export default function InterviewRequest({ user, settings, onBack }) {
                 <button key={p} style={{ ...s.optBtn, ...(form.purpose === p ? s.optSel : {}) }} onClick={() => set('purpose', p)}>{p}</button>
               ))}
             </div>
-            <div style={s.row}>
-              <div style={{ flex: 1 }}>
-                <div style={s.sublabel}>희망 일자 <span style={{ color: '#ef4444' }}>*</span></div>
-                <input type="date" style={s.input} value={form.preferDate} onChange={e => set('preferDate', e.target.value)} />
-              </div>
-              <div style={{ flex: 1, marginLeft: 12 }}>
-                <div style={s.sublabel}>희망 시간 (선택)</div>
-                <input type="time" style={s.input} value={form.preferTime} onChange={e => set('preferTime', e.target.value)} />
-              </div>
-            </div>
+            <div style={s.sublabel}>희망 일자 <span style={{ color: '#ef4444' }}>*</span></div>
+            <input type="date" style={s.input} value={form.preferDate} onChange={e => set('preferDate', e.target.value)} />
           </div>
 
           <div style={s.card}>
