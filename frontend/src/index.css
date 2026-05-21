@@ -36,19 +36,20 @@ select {
   cursor: pointer;
 }
 
-/* date / time input: iOS 흰 배경 + 텍스트 색상 */
+/* date / time input: iOS 흰 배경 + 텍스트 색상 + 높이 통일 */
 input[type="date"],
 input[type="time"] {
   background-color: #fff;
   color: #333;
   cursor: pointer;
-  min-height: 42px;
+  height: 44px !important;
+  max-width: 100%;
+  box-sizing: border-box !important;
 }
 
 /* iOS: 빈 날짜 placeholder 표시 */
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
-  min-height: 1.5em;
 }
 
 /* ── 헤더 고정 ── */
@@ -134,7 +135,7 @@ input[type="date"]::-webkit-date-and-time-value {
 
   /* ClockFix 3열 그리드 → 모바일 최적화 */
   .r-clock-grid {
-    grid-template-columns: 76px 1fr 1fr !important;
+    grid-template-columns: auto 1fr 1fr !important;
     gap: 6px !important;
     font-size: 12px !important;
   }

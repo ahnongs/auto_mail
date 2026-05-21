@@ -94,12 +94,8 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
         <div style={s.formCol}>
           <div style={s.card}>
             <div style={s.cardTitle}>구매 정보</div>
-            <div style={s.row}>
-              <div style={{ flex: 1 }}>
-                <div style={s.sublabel}>구입처 (업체명) <span style={{ color: '#ef4444' }}>*</span></div>
-                <input style={s.input} placeholder="예: 쿠팡, 네이버쇼핑" value={form.vendor} onChange={e => set('vendor', e.target.value)} />
-              </div>
-            </div>
+            <div style={s.sublabel}>구입처 (업체명) <span style={{ color: '#ef4444' }}>*</span></div>
+            <input style={s.input} placeholder="예: 쿠팡, 네이버쇼핑" value={form.vendor} onChange={e => set('vendor', e.target.value)} />
             <div style={{ marginTop: 12 }}>
               <div style={s.sublabel}>구매 링크 (선택)</div>
               <input style={s.input} placeholder="https://..." value={form.vendorUrl} onChange={e => set('vendorUrl', e.target.value)} />
@@ -181,7 +177,6 @@ const s = {
   card: { background: '#fff', borderRadius: 12, padding: 20 },
   cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
   sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
-  row: { display: 'flex', gap: 0 },
   input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
   textarea: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
   optBtn: { padding: '8px 14px', border: '1.5px solid #e8e8e8', borderRadius: 8, background: '#fff', fontSize: 12, cursor: 'pointer' },
