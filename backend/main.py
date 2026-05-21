@@ -108,12 +108,14 @@ async def google_callback(code: str):
         algorithm="HS256",
     )
 
+    is_prod = FRONTEND_URL.startswith("https://")
     response = RedirectResponse(url=f"{FRONTEND_URL}?login=success")
     response.set_cookie(
         key="session",
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite="none" if is_prod else "lax",
+        secure=is_prod,
         max_age=3600,
     )
     return response
