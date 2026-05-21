@@ -2,7 +2,7 @@
 // 테스트 시: TEST_MODE = true
 // 운영 시:   TEST_MODE = false
 // ─────────────────────────────────────────────
-const TEST_MODE = true
+const TEST_MODE = false
 const TEST_EMAIL = 'ahnongseo@gmail.com'
 
 const REAL = {
