@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.env
+*.env
+venv/
+.venv/
+
+# Claude
+.claude/
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# Misc
+.DS_Store
+*.log
