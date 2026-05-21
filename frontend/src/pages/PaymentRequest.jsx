@@ -118,7 +118,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
 
           <div style={s.card}>
             <div style={s.cardTitle}>입금 정보</div>
-            <div style={s.row}>
+            <div style={s.row} className="r-date-row">
               <div style={{ flex: 1 }}>
                 <div style={s.sublabel}>구매일자</div>
                 <input type="date" style={s.input} value={form.purchaseDate} onChange={e => set('purchaseDate', e.target.value)} />

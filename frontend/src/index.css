@@ -21,6 +21,36 @@ button {
   }
 }
 
+/* ── 폼 요소 스타일 통일 ── */
+
+/* select: 네이티브 화살표 제거 + 커스텀 */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 38px !important;
+  cursor: pointer;
+}
+
+/* date / time input: iOS 흰 배경 + 텍스트 색상 */
+input[type="date"],
+input[type="time"] {
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  min-height: 42px;
+}
+
+/* iOS: 빈 날짜 placeholder 표시 */
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+}
+
 /* ── 헤더 고정 ── */
 .r-header, .r-home-header {
   position: sticky;
@@ -89,5 +119,23 @@ button {
   /* 홈 메인 패딩 */
   .r-main {
     padding: 20px 14px !important;
+  }
+
+  /* 날짜/금액 나란히 row → 세로 배치 */
+  .r-date-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .r-date-row > div {
+    flex: none !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ClockFix 3열 그리드 → 모바일 최적화 */
+  .r-clock-grid {
+    grid-template-columns: 76px 1fr 1fr !important;
+    gap: 6px !important;
+    font-size: 12px !important;
   }
 }

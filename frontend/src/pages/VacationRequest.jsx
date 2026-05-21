@@ -224,7 +224,7 @@ export default function VacationRequest({ user, settings, onBack }) {
             <div style={s.cardTitle}>휴가 일시</div>
 
             {/* 날짜 */}
-            <div style={s.row}>
+            <div style={s.row} className="r-date-row">
               <div style={{ flex: 1 }}>
                 <div style={s.sublabel}>날짜</div>
                 <input type="date" style={s.input} value={form.startDate}

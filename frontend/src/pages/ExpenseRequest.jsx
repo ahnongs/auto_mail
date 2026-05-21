@@ -214,7 +214,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#667eea' }}>항목 {i + 1}</span>
                   {items.length > 1 && <button style={s.removeBtn} onClick={() => removeItem(i)}>✕</button>}
                 </div>
-                <div style={s.row}>
+                <div style={s.row} className="r-date-row">
                   <div style={{ flex: 1 }}>
                     <div style={s.sublabel}>사용 일자</div>
                     <input type="date" style={s.input} value={it.date} onChange={e => setItem(i, 'date', e.target.value)} />

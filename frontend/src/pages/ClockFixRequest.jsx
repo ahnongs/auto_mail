@@ -160,12 +160,12 @@ export default function ClockFixRequest({ user, settings, onBack }) {
 
           <div style={s.card}>
             <div style={s.cardTitle}>■ 상세 내용</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }} className="r-clock-grid">
               <div style={s.tableHeader}>구분</div>
               <div style={s.tableHeader}>시간</div>
               <div style={s.tableHeader}>플렉스 현황</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }} className="r-clock-grid">
               <div style={s.tableLabel}>실제 출근시간</div>
               <input type="time" style={s.input} value={form.actualIn} onChange={e => set('actualIn', e.target.value)} />
               <select style={s.input} value={form.flexStatusIn} onChange={e => set('flexStatusIn', e.target.value)}>
@@ -174,7 +174,7 @@ export default function ClockFixRequest({ user, settings, onBack }) {
                 <option value="미처리">미처리</option>
               </select>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }} className="r-clock-grid">
               <div style={s.tableLabel}>실제 퇴근시간</div>
               <input type="time" style={s.input} value={form.actualOut} onChange={e => set('actualOut', e.target.value)} />
               <select style={s.input} value={form.flexStatusOut} onChange={e => set('flexStatusOut', e.target.value)}>
