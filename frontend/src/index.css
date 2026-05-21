@@ -28,10 +28,21 @@ button {
   z-index: 50;
 }
 
-/* ── iOS Safe Area (하단 바 짤림 방지) ── */
+/* ── 설정 모달 버튼 항상 보이게 sticky 고정 ── */
 @media (max-width: 768px) {
   .r-modal {
-    max-height: 85dvh !important;
+    max-height: 90dvh !important;
+    padding-bottom: 0 !important;
+  }
+  .r-modal-actions {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 12px 0 max(16px, env(safe-area-inset-bottom));
+    margin: 0 -24px -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+    border-top: 1px solid #f0f0f0;
   }
 }
 

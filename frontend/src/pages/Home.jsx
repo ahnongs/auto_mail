@@ -194,7 +194,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               )}
             </div>
 
-            <div style={s.modalActions}>
+            <div style={s.modalActions} className="r-modal-actions">
               <button style={s.cancelBtn} onClick={() => setShowSettings(false)}>취소</button>
               <button style={s.saveBtn} onClick={handleSave}>저장</button>
             </div>
