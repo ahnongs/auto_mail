@@ -20,7 +20,19 @@ function buildSignatureHtml(settings, userEmail) {
   return h
 }
 
-const CATEGORIES = ['복리후생비(식대/회식/간식)', '여비교통비', '접대비', '운반비', '소모품비', '수선비', '지급수수료', '광고선전비']
+const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
+
+const CATEGORY_GUIDE = [
+  { name: '복리후생비(식대)', desc: '야근 식대' },
+  { name: '복리후생비(회식/간식)', desc: '공식 팀 회식비, 탕비실 커피·음료·간식 구매비, 워크숍 비용, 직원 경조사비' },
+  { name: '여비교통비(출장/외근)', desc: '병원 미팅 방문 시 택시비·버스/지하철비, 출장/지방 미팅용 KTX·고속버스 요금, 외근 시 주차비·통행료(하이패스)' },
+  { name: '접대비(고객사 접대)', desc: '병원 관계자(원장님 등) 미팅 식사/카피, 병원 개원 축하 화환 및 기념 선물, 명절/기념일 클라이언트 선물 구매' },
+  { name: '운반비(퀵/택배 등)', desc: '병원으로 홍보물(X배너·브로셔) 발송비, 긴급 시안 전달용 퀵서비스 이용료, 우체국 등기 우편 요금' },
+  { name: '소모품비(사무용품/도서인쇄)', desc: '촬영용 소품(꽃·가구·배경지 등), 명함 인쇄·제안서 제본 비용, 마케팅/디자인 관련 도서 구입비, 문구류·A4용지·토너 등' },
+  { name: '수선비(비품수리/청소)', desc: '업무용 노트북·카메라 수리비, 사무실 전구 교체·도어락 수리 등, 사무실 정기 청소 및 방역 비용' },
+  { name: '지급수수료', desc: '외주 업체 등 당사가 사용한 서비스에 대한 대가로 지불하는 비용 등' },
+  { name: '광고선전비', desc: '당사 내부 마케팅(인하우스) 등을 위해 사용한 비용' },
+]
 const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
 function buildBodyHtml({ user, settings, items, total, attachFile }) {
@@ -255,7 +267,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           </button>
         </div>
 
-        {/* 미리보기 */}
+        {/* 미리보기 + 가이드 */}
         <div style={s.previewCol}>
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
@@ -265,6 +277,32 @@ export default function ExpenseRequest({ user, settings, onBack }) {
             {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
             <pre style={s.preBody}>{plainBody}</pre>
+          </div>
+
+          {/* 지출 구분 기준 */}
+          <div style={{ marginTop: 16 }}>
+            <div style={s.previewTitle}>지출 구분 기준</div>
+            <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <div style={{ background: '#667eea', color: '#fff', textAlign: 'center', padding: '8px 0', fontSize: 13, fontWeight: 700 }}>
+                &lt;지출 구분 기준&gt;
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={s.gTh}>계정과목</th>
+                    <th style={s.gTh}>내 용</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATEGORY_GUIDE.map((row, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8f8ff' }}>
+                      <td style={s.gTdName}>{row.name}</td>
+                      <td style={s.gTdDesc}>{row.desc}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -297,4 +335,7 @@ const s = {
   pKey: { fontSize: 11, fontWeight: 600, color: '#bbb', minWidth: 52, paddingTop: 1 },
   pVal: { fontSize: 13, color: '#333', flex: 1, wordBreak: 'break-all' },
   preBody: { fontSize: 11.5, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 },
+  gTh: { background: '#eef0ff', color: '#444', fontSize: 11, fontWeight: 700, padding: '7px 10px', border: '1px solid #dde0ff', textAlign: 'center' },
+  gTdName: { fontSize: 11, fontWeight: 700, color: '#333', padding: '6px 10px', border: '1px solid #eee', whiteSpace: 'pre-line', verticalAlign: 'middle', minWidth: 80 },
+  gTdDesc: { fontSize: 11, color: '#555', padding: '6px 10px', border: '1px solid #eee', lineHeight: 1.6, verticalAlign: 'middle' },
 }
