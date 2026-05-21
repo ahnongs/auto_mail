@@ -22,6 +22,7 @@ const formatNameKo = (v) => {
 
 export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings }) {
   const [showSettings, setShowSettings] = useState(false)
+  const [settingsHint, setSettingsHint] = useState('')
   const [draft, setDraft] = useState(settings)
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
 
@@ -33,9 +34,34 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
     }
     onSaveSettings(normalized)
     setShowSettings(false)
+    setSettingsHint('')
   }
 
-  const isSettingsEmpty = !settings.managerEmail || !settings.ceoEmail || !settings.directorEmail
+  const isMissingRecipients = !settings.managerEmail || !settings.ceoEmail || !settings.directorEmail
+  const isMissingSignature = !settings.sigNameKo
+  const isMissingAccount = !settings.bank || !settings.accountHolder || !settings.account
+
+  const handleCardClick = (t) => {
+    if (!t.ready) return
+    if (isMissingRecipients || isMissingSignature) {
+      const missing = []
+      if (isMissingRecipients) missing.push('수신자')
+      if (isMissingSignature) missing.push('메일 서명')
+      setSettingsHint(`${missing.join(', ')} 정보를 먼저 입력해주세요.`)
+      setDraft(settings)
+      setShowSettings(true)
+      return
+    }
+    if (t.id === 'expense' && isMissingAccount) {
+      setSettingsHint('개인비용지출을 사용하려면 계좌 정보를 먼저 입력해주세요.')
+      setDraft(settings)
+      setShowSettings(true)
+      return
+    }
+    onNavigate(t.id)
+  }
+
+  const isSettingsEmpty = isMissingRecipients || isMissingSignature
 
   return (
     <div style={s.container}>
@@ -60,8 +86,8 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
 
         {isSettingsEmpty && (
           <div style={s.banner}>
-            <span>⚠️ 수신자 설정이 필요해요.</span>
-            <button style={s.bannerBtn} onClick={() => { setDraft(settings); setShowSettings(true) }}>
+            <span>⚠️ {isMissingRecipients && isMissingSignature ? '수신자 · 메일 서명' : isMissingRecipients ? '수신자' : '메일 서명'} 설정이 필요해요.</span>
+            <button style={s.bannerBtn} onClick={() => { setSettingsHint(''); setDraft(settings); setShowSettings(true) }}>
               지금 설정하기 →
             </button>
           </div>
@@ -71,7 +97,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           {templates.map(t => (
             <button key={t.id}
               style={{ ...s.card, ...(t.ready ? {} : s.cardDisabled) }}
-              onClick={() => t.ready && onNavigate(t.id)}
+              onClick={() => handleCardClick(t)}
               disabled={!t.ready}>
               <div style={s.cardIcon}>{t.icon}</div>
               <div style={s.cardName}>{t.name}</div>
@@ -87,6 +113,11 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
         <div style={s.overlay} onClick={() => setShowSettings(false)}>
           <div style={s.modal} className="r-modal" onClick={e => e.stopPropagation()}>
             <h2 style={s.modalTitle}>⚙️ 설정</h2>
+            {settingsHint && (
+              <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#856404' }}>
+                ⚠️ {settingsHint}
+              </div>
+            )}
 
             {/* 수신자 */}
             <div style={s.section}>
