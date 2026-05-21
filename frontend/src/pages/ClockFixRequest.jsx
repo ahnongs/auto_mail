@@ -84,7 +84,7 @@ export default function ClockFixRequest({ user, settings, onBack }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = 'clockinout@stardoc1.com'
-  const cc = [settings.managerEmail].filter(Boolean).join(', ')
+  const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
 
   const mmdd = useMemo(() => {
     const d = new Date()
