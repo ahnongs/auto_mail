@@ -232,7 +232,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                 </div>
                 <div style={{ marginTop: 8 }}>
                   <div style={s.sublabel}>세부내용</div>
-                  <input style={s.input} placeholder="예: 팀 점심 식사" value={it.detail} onChange={e => setItem(i, 'detail', e.target.value)} />
+                  <input style={s.input} placeholder="예: 야근식대" value={it.detail} onChange={e => setItem(i, 'detail', e.target.value)} />
                 </div>
                 <div style={{ marginTop: 8 }}>
                   <div style={s.sublabel}>비고 (선택)</div>

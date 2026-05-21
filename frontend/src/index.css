@@ -36,20 +36,15 @@ select {
   cursor: pointer;
 }
 
-/* date / time input: iOS 흰 배경 + 텍스트 색상 + 높이 통일 */
+/* date / time input: 네이티브 외형 제거 → 텍스트 input과 동일하게 */
 input[type="date"],
 input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
   background-color: #fff;
   color: #333;
   cursor: pointer;
-  height: 44px !important;
   max-width: 100%;
-  box-sizing: border-box !important;
-}
-
-/* iOS: 빈 날짜 placeholder 표시 */
-input[type="date"]::-webkit-date-and-time-value {
-  text-align: left;
 }
 
 /* ── 헤더 고정 ── */

@@ -226,7 +226,7 @@ export default function VacationRequest({ user, settings, onBack }) {
             {/* 날짜 */}
             <div style={s.row} className="r-date-row">
               <div style={{ flex: 1 }}>
-                <div style={s.sublabel}>날짜</div>
+                <div style={s.sublabel}>시작일</div>
                 <input type="date" style={s.input} value={form.startDate}
                   onChange={e => set('startDate', e.target.value)} />
               </div>
