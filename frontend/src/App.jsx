@@ -38,6 +38,23 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [])
 
+  // 브라우저 뒤로가기 지원
+  useEffect(() => {
+    history.replaceState({ page: 'home' }, '')
+    const onPop = (e) => setPage(e.state?.page || 'home')
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const navigate = (newPage) => {
+    history.pushState({ page: newPage }, '')
+    setPage(newPage)
+  }
+
+  const goBack = () => {
+    history.back()
+  }
+
   useEffect(() => {
     if (settings.logoImageData) return
     fetch('/logo.png')
@@ -70,7 +87,7 @@ export default function App() {
 
   if (!user) return <Login />
 
-  const pageProps = { user, settings, onBack: () => setPage('home') }
+  const pageProps = { user, settings, onBack: goBack }
 
   if (page === 'vacation') return <VacationRequest {...pageProps} />
   if (page === 'payment') return <PaymentRequest {...pageProps} />
@@ -85,7 +102,7 @@ export default function App() {
     <Home
       user={user}
       onLogout={handleLogout}
-      onNavigate={setPage}
+      onNavigate={navigate}
       settings={settings}
       onSaveSettings={handleSaveSettings}
     />
