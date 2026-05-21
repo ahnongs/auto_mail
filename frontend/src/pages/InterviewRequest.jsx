@@ -1,9 +1,8 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const TARGETS = ['파트장', '본부장', '경영지원 파트장']
 const PURPOSES = ['업무 분장', '사내 고충', '개인 상담', '기타']

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { api, API_BASE } from './api'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import VacationRequest from './pages/VacationRequest'
@@ -11,7 +11,6 @@ import RepairRequest from './pages/RepairRequest'
 import OnlinePaymentRequest from './pages/OnlinePaymentRequest'
 import DesignRequest from './pages/DesignRequest'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const DEFAULT_SETTINGS = {
   managerEmail: '', ceoEmail: 'james@stardoc1.com', directorEmail: 'soyun@stardoc1.com', bizManagerEmail: 'yunmo@stardoc1.com', dept: '',
@@ -92,7 +91,7 @@ export default function App() {
     api.post('/settings', s).catch(() => {})
   }
 
-  const handleLogout = () => { window.location.href = 'http://localhost:8000/auth/logout' }
+  const handleLogout = () => { window.location.href = `${API_BASE}/auth/logout` }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>

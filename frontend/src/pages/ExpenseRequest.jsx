@@ -1,10 +1,9 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
 

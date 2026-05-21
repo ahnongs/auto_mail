@@ -1,9 +1,8 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 

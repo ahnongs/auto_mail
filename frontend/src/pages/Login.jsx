@@ -1,6 +1,8 @@
+import { API_BASE } from '../api'
+
 export default function Login() {
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8000/auth/google'
+    window.location.href = `${API_BASE}/auth/google`
   }
 
   return (

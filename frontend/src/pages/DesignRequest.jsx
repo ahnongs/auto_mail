@@ -1,10 +1,9 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const URGENCY = ['일반', '긴급']
 const REQ_TYPE = ['계약 포함', '서비스', '비용 청구', '내부 디자인']

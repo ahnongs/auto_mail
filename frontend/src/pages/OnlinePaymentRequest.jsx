@@ -1,9 +1,8 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 export default function OnlinePaymentRequest({ user, settings, onBack }) {
   const [form, setForm] = useState({

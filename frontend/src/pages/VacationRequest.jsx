@@ -1,10 +1,9 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import axios from 'axios'
+import { api } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
-const api = axios.create({ baseURL: 'http://localhost:8000', withCredentials: true })
 
 const TYPES = [
   { id: '연차',      label: '연차',     icon: '🌴', multiDay: true  },
