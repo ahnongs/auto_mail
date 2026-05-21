@@ -60,9 +60,16 @@ export default function App() {
     api.get('/settings')
       .then(res => {
         if (res.data && Object.keys(res.data).length > 0) {
-          const merged = { ...DEFAULT_SETTINGS, ...res.data }
-          setSettings(merged)
-          localStorage.setItem('automail_settings', JSON.stringify(merged))
+          setSettings(current => {
+            const merged = { ...DEFAULT_SETTINGS, ...res.data }
+            // 서버에 로고가 없으면 현재 로고(logo.png 자동로드 등) 유지
+            if (!merged.logoImageData && current.logoImageData) {
+              merged.logoImageData = current.logoImageData
+              merged.logoImageType = current.logoImageType
+            }
+            localStorage.setItem('automail_settings', JSON.stringify(merged))
+            return merged
+          })
         }
       })
       .catch(() => {})
