@@ -180,6 +180,9 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     f'{body_escaped}</div>'
                 )
             parts = [body_content]
+            # 본문 이미지는 서명 위에
+            if has_body_img:
+                parts.append('<br><img src="cid:body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
             if req.signatureHtml:
                 parts.append(
                     '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
@@ -191,10 +194,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     f'<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
                     f'<div style="font-size:13px;color:#555">{sig}</div>'
                 )
-            if has_body_img:
-                parts.append('<br><img src="cid:body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
-            if has_logo:
-                parts.append('<br><img src="cid:signature_img" style="max-height:80px">')
+            # 로고는 signatureHtml 안에 이미 포함되어 있으므로 별도 추가 안 함
             return "".join(parts)
 
         if needs_html:
