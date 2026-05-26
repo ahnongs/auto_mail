@@ -3,7 +3,7 @@ import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import { useUndoSend } from '../hooks/useUndoSend'
-import UndoToast from '../components/UndoToast'
+import SendPendingScreen from '../components/SendPendingScreen'
 
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -119,6 +119,8 @@ export default function ClockFixRequest({ user, settings, onBack }) {
     })
   }
 
+  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} />
+
   if (sent) return (
     <div style={s.center}>
       <div style={s.successCard}>
@@ -189,10 +191,9 @@ export default function ClockFixRequest({ user, settings, onBack }) {
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending || pending}>
+          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
-          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         <div style={s.previewCol} className="r-preview-col">

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
-import UndoToast from '../components/UndoToast'
+import SendPendingScreen from '../components/SendPendingScreen'
 
 
 const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
@@ -163,6 +163,8 @@ export default function ExpenseRequest({ user, settings, onBack }) {
     })
   }
 
+  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} />
+
   if (sent) return (
     <div style={s.center}>
       <div style={s.successCard}>
@@ -259,10 +261,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending || pending}>
+          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
-          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         {/* 미리보기 + 가이드 */}
