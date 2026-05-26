@@ -154,7 +154,7 @@ export default function VacationRequest({ user, settings, onBack }) {
 
             await api.post('/mail/schedule', {
               send_at: scheduleSendAt,
-              to: R.leave,
+              to: settings.testMode ? settings.testEmail : R.leave,
               cc: '',
               subject: `Fwd: ${subject}`,
               body: coverBody,
@@ -193,7 +193,7 @@ export default function VacationRequest({ user, settings, onBack }) {
           <div style={{ background: '#f0fff4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#15803d', textAlign: 'left' }}>
             📅 사전 알림 예약 완료<br />
             <span style={{ fontSize: 12, color: '#166534' }}>
-              {dayBefore} {scheduleOpt.time} → {R.leave}로 자동 발송 예정
+              {dayBefore} {scheduleOpt.time} → {settings.testMode ? settings.testEmail : R.leave}로 자동 발송 예정
             </span>
           </div>
         )}
@@ -349,7 +349,7 @@ export default function VacationRequest({ user, settings, onBack }) {
                 </select>
                 {dayBefore ? (
                   <div style={{ marginTop: 8, fontSize: 12, color: '#15803d', fontWeight: 500 }}>
-                    📬 {dayBefore} {scheduleOpt.time}에 {R.leave}로 자동 발송
+                    📬 {dayBefore} {scheduleOpt.time}에 {settings.testMode ? settings.testEmail : R.leave}로 자동 발송
                   </div>
                 ) : (
                   <div style={{ marginTop: 8, fontSize: 12, color: '#f59e0b' }}>
