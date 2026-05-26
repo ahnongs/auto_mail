@@ -1,4 +1,4 @@
-export default function SendPendingScreen({ countdown, onCancel, total = 10 }) {
+export default function SendPendingScreen({ countdown, onCancel, onSendNow, total = 10 }) {
   const pct = ((total - countdown) / total) * 100
 
   return (
@@ -12,7 +12,10 @@ export default function SendPendingScreen({ countdown, onCancel, total = 10 }) {
           <div style={{ ...s.barFill, width: `${pct}%` }} />
         </div>
 
-        <button style={s.cancelBtn} onClick={onCancel}>✕ 전송 취소</button>
+        <div style={s.btnRow}>
+          <button style={s.cancelBtn} onClick={onCancel}>✕ 전송 취소</button>
+          <button style={s.sendNowBtn} onClick={onSendNow}>⚡ 바로 전송</button>
+        </div>
       </div>
     </div>
   )
@@ -59,15 +62,30 @@ const s = {
     borderRadius: 6,
     transition: 'width 1s linear',
   },
+  btnRow: {
+    display: 'flex',
+    gap: 10,
+  },
   cancelBtn: {
+    flex: 1,
     background: '#fff0f0',
     color: '#dc2626',
     border: '1.5px solid #fca5a5',
     borderRadius: 12,
     padding: '14px 0',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 700,
     cursor: 'pointer',
-    width: '100%',
+  },
+  sendNowBtn: {
+    flex: 1,
+    background: '#667eea',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 12,
+    padding: '14px 0',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
   },
 }

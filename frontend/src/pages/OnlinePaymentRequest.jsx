@@ -24,7 +24,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-  const { pending, countdown, schedule, cancel } = useUndoSend()
+  const { pending, countdown, schedule, cancel, sendNow } = useUndoSend()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = R.request
@@ -78,7 +78,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
     })
   }
 
-  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} />
+  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
   if (sent) return (
     <div style={s.center}>

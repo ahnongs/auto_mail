@@ -90,7 +90,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
-  const { pending, countdown, schedule, cancel } = useUndoSend()
+  const { pending, countdown, schedule, cancel, sendNow } = useUndoSend()
 
   const setItem = (i, k, v) => setItems(arr => arr.map((it, idx) => idx === i ? { ...it, [k]: v } : it))
   const addItem = () => setItems(arr => [...arr, emptyItem()])
@@ -163,7 +163,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
     })
   }
 
-  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} />
+  if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
   if (sent) return (
     <div style={s.center}>

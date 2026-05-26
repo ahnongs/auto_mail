@@ -5,8 +5,10 @@ export function useUndoSend(seconds = 10) {
   const [countdown, setCountdown] = useState(seconds)
   const sendTimerRef = useRef(null)
   const countdownRef = useRef(null)
+  const sendFnRef = useRef(null)
 
   const schedule = (sendFn) => {
+    sendFnRef.current = sendFn
     setPending(true)
     setCountdown(seconds)
 
@@ -26,6 +28,17 @@ export function useUndoSend(seconds = 10) {
     clearInterval(countdownRef.current)
     setPending(false)
     setCountdown(seconds)
+    sendFnRef.current = null
+  }
+
+  const sendNow = async () => {
+    clearTimeout(sendTimerRef.current)
+    clearInterval(countdownRef.current)
+    setPending(false)
+    setCountdown(seconds)
+    const fn = sendFnRef.current
+    sendFnRef.current = null
+    if (fn) await fn()
   }
 
   useEffect(() => () => {
@@ -33,5 +46,5 @@ export function useUndoSend(seconds = 10) {
     clearInterval(countdownRef.current)
   }, [])
 
-  return { pending, countdown, schedule, cancel }
+  return { pending, countdown, schedule, cancel, sendNow }
 }
