@@ -41,6 +41,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
     getScheduledMails().then(r => setScheduledMails(r.data)).catch(() => {})
   }, [])
   const handleCancelSchedule = async (id) => {
+    if (!window.confirm('예약을 취소하시겠습니까?')) return
     await cancelScheduledMail(id)
     setScheduledMails(prev => prev.filter(m => m.id !== id))
   }
