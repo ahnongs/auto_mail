@@ -142,8 +142,14 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                   value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
               </Field>
               <Field label="소속 부서">
-                <input style={s.input} placeholder="예: 마케팅기획디자인개발 (파트 자동추가)"
-                  value={draft.dept} onChange={e => set('dept', e.target.value)} />
+                <select style={s.input} value={draft.sigPosition || ''} onChange={e => {
+                  const v = e.target.value
+                  set('sigPosition', v)
+                  set('dept', v ? v + ' 파트' : '')
+                }}>
+                  <option value="">선택</option>
+                  <option value="마케팅기획디자인개발">마케팅기획디자인개발 파트</option>
+                </select>
               </Field>
             </div>
 
@@ -180,10 +186,6 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                     value={draft.sigNameEn} onChange={e => set('sigNameEn', e.target.value)} />
                 </Field>
               </div>
-              <Field label="파트명">
-                <input style={s.input} placeholder="예: 마케팅기획디자인개발 (파트 자동추가)"
-                  value={draft.sigPosition} onChange={e => set('sigPosition', e.target.value)} />
-              </Field>
               <Field label="직책">
                 <div style={{ display: 'flex', gap: 8 }}>
                   {['매니저', 'PM', '파트장'].map(r => (
