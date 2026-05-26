@@ -270,23 +270,27 @@ def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept
     # 시트 이름 따옴표 이스케이프
     sheet_ref = EXPENSE_SHEET_NAME.replace("'", "''")
 
-    # 마지막 NO가 있는 행 찾기 (0-indexed)
-    no_values = service.spreadsheets().values().get(
+    # 사용일자(C열) 기준으로 마지막 실제 데이터 행 찾기
+    # A열은 빈 행에도 NO가 미리 채워져 있어서 C열(날짜)로 판단
+    ac_values = service.spreadsheets().values().get(
         spreadsheetId=EXPENSE_SHEET_ID,
-        range=f"'{sheet_ref}'!A18:A"
+        range=f"'{sheet_ref}'!A18:C"
     ).execute().get("values", [])
 
     last_no = 0
     last_data_row_0idx = 17  # 0-indexed, 기본값 = row 18 (헤더 다음)
 
-    for i, row in enumerate(no_values):
-        if row:
-            try:
-                n = int(str(row[0]).strip())
-                last_no = max(last_no, n)
-                last_data_row_0idx = 17 + i  # row 18 = index 17
-            except Exception:
-                pass
+    for i, row in enumerate(ac_values):
+        # C열(index 2)에 날짜 값이 있는 행만 실제 데이터로 인정
+        date_val = row[2].strip() if len(row) > 2 and row[2] else ""
+        if date_val:
+            last_data_row_0idx = 17 + i
+            # A열에서 NO 추적 (다음 번호 계산용)
+            if row and row[0]:
+                try:
+                    last_no = max(last_no, int(str(row[0]).strip()))
+                except Exception:
+                    pass
 
     insert_at = last_data_row_0idx + 1  # 삽입할 위치 (0-indexed)
 
