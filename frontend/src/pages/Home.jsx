@@ -31,13 +31,14 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
       ...draft,
       dept: draft.dept ? trimPart(draft.dept) + '파트' : '',
       sigPosition: trimPart(draft.sigPosition || ''),
+      managerEmail: draft.sigRole === '파트장' ? '' : draft.managerEmail,
     }
     onSaveSettings(normalized)
     setShowSettings(false)
     setSettingsHint('')
   }
 
-  const isMissingRecipients = !settings.managerEmail || !settings.ceoEmail || !settings.directorEmail
+  const isMissingRecipients = (settings.sigRole !== '파트장' && !settings.managerEmail) || !settings.ceoEmail || !settings.directorEmail
   const isMissingSignature = !settings.sigNameKo
   const isMissingAccount = !settings.bank || !settings.accountHolder || !settings.account
 
@@ -122,10 +123,12 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
             {/* 수신자 */}
             <div style={s.section}>
               <div style={s.sectionTitle}>수신자</div>
-              <Field label="파트장 이메일" required>
-                <input style={s.input} placeholder="파트장@stardoc1.com"
-                  value={draft.managerEmail} onChange={e => set('managerEmail', e.target.value)} />
-              </Field>
+              {draft.sigRole !== '파트장' && (
+                <Field label="파트장 이메일" required>
+                  <input style={s.input} placeholder="파트장@stardoc1.com"
+                    value={draft.managerEmail} onChange={e => set('managerEmail', e.target.value)} />
+                </Field>
+              )}
               <Field label="대표 이메일" required>
                 <input style={s.input} placeholder="대표@stardoc1.com"
                   value={draft.ceoEmail} onChange={e => set('ceoEmail', e.target.value)} />
