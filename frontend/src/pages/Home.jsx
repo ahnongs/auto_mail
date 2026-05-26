@@ -1,4 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getScheduledMails, cancelScheduledMail } from '../api'
+
+function formatSendAt(iso) {
+  const d = new Date(iso)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}월 ${dd}일 ${hh}:${min}`
+}
 
 const formatPhone = (v) => {
   const n = v.replace(/\D/g, '').slice(0, 11)
@@ -25,6 +35,15 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   const [settingsHint, setSettingsHint] = useState('')
   const [draft, setDraft] = useState(settings)
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
+
+  const [scheduledMails, setScheduledMails] = useState([])
+  useEffect(() => {
+    getScheduledMails().then(r => setScheduledMails(r.data)).catch(() => {})
+  }, [])
+  const handleCancelSchedule = async (id) => {
+    await cancelScheduledMail(id)
+    setScheduledMails(prev => prev.filter(m => m.id !== id))
+  }
 
   const handleSave = () => {
     const normalized = {
@@ -115,6 +134,24 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
             </button>
           ))}
         </div>
+
+        {scheduledMails.length > 0 && (
+          <div style={s.scheduleSection}>
+            <div style={s.scheduleHeader}>발송 예약 내역</div>
+            {scheduledMails.map(mail => (
+              <div key={mail.id} style={s.scheduleItem}>
+                <div style={s.scheduleInfo}>
+                  <div style={s.scheduleDate}>{formatSendAt(mail.send_at)}</div>
+                  <div style={s.scheduleSubject}>{mail.subject}</div>
+                  <div style={s.scheduleTo}>→ {mail.to}</div>
+                </div>
+                <button style={s.scheduleCancelBtn} onClick={() => handleCancelSchedule(mail.id)}>
+                  취소
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* 설정 모달 */}
@@ -341,6 +378,14 @@ const s = {
   cardName: { fontSize: 15, fontWeight: 700, marginBottom: 4, color: '#1a1a1a' },
   cardDesc: { fontSize: 12, color: '#888', lineHeight: 1.4, marginBottom: 10 },
   soon: { display: 'inline-block', padding: '2px 8px', background: '#f0f0f0', borderRadius: 20, fontSize: 11, color: '#aaa' },
+  scheduleSection: { marginTop: 24, background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
+  scheduleHeader: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
+  scheduleItem: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid #f0f0f0' },
+  scheduleInfo: { display: 'flex', flexDirection: 'column', gap: 2 },
+  scheduleDate: { fontSize: 12, fontWeight: 700, color: '#667eea' },
+  scheduleSubject: { fontSize: 13, color: '#333', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  scheduleTo: { fontSize: 11, color: '#aaa' },
+  scheduleCancelBtn: { background: '#fff0f0', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   modal: { background: '#fff', borderRadius: 16, padding: '28px 24px', width: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
   modalTitle: { fontSize: 18, fontWeight: 700, marginBottom: 20 },

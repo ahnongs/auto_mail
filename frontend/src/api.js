@@ -11,3 +11,6 @@ export function sendMail(params, settings) {
   }
   return api.post('/mail/send', params)
 }
+
+export const getScheduledMails = () => api.get('/mail/scheduled')
+export const cancelScheduledMail = (id) => api.delete(`/mail/scheduled/${id}`)
