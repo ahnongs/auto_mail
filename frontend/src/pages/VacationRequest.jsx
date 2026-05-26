@@ -262,15 +262,20 @@ export default function VacationRequest({ user, settings, onBack }) {
           </div>
 
           {/* 수신자 */}
-          <div style={{ ...s.card, background: '#f8f8ff', border: '1.5px solid #e0e0ff' }}>
+          <div style={{ ...s.card, background: settings.testMode ? '#fff9ec' : '#f8f8ff', border: `1.5px solid ${settings.testMode ? '#fbbf24' : '#e0e0ff'}` }}>
             <div style={s.cardTitle}>수신자 <span style={{ fontSize: 11, color: '#aaa', fontWeight: 400 }}>설정에서 관리</span></div>
+            {settings.testMode && (
+              <div style={{ fontSize: 11, color: '#92400e', marginBottom: 6 }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>
+            )}
             <div style={s.recipientRow}>
               <span style={s.recipientKey}>받는사람</span>
-              <span style={s.recipientVal}>{to || <span style={{ color: '#f59e0b' }}>⚠️ 설정 필요</span>}</span>
+              <span style={{ ...s.recipientVal, ...(settings.testMode ? { color: '#b45309', fontWeight: 600 } : {}) }}>
+                {previewTo || <span style={{ color: '#f59e0b' }}>⚠️ 설정 필요</span>}
+              </span>
             </div>
             <div style={s.recipientRow}>
               <span style={s.recipientKey}>참조</span>
-              <span style={s.recipientVal}>{cc || <span style={{ color: '#ccc' }}>없음</span>}</span>
+              <span style={s.recipientVal}>{previewCc || <span style={{ color: '#ccc' }}>없음</span>}</span>
             </div>
           </div>
 
