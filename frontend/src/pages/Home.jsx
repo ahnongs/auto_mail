@@ -77,7 +77,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           <img src={user.picture} alt={user.name} style={s.avatar} />
           <span style={s.userName}>{user.name}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={onToggleTestMode}>
-            <span style={{ fontSize: 11, color: testMode ? '#b45309' : '#aaa', fontWeight: 600, userSelect: 'none' }}>🧪 테스트</span>
+            <span style={{ fontSize: 11, color: testMode ? '#b45309' : '#aaa', fontWeight: 600, userSelect: 'none' }}>테스트</span>
             <div style={{ width: 36, height: 20, borderRadius: 10, background: testMode ? '#f59e0b' : '#ddd', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
               <div style={{ position: 'absolute', top: 2, left: testMode ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
             </div>
