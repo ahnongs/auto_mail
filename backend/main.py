@@ -261,29 +261,34 @@ def logout():
 
 EXPENSE_SHEET_ID = "178YnlC8kKpSKeKm500tgaSkRmEIJzmEw0FSmfdNA9XM"
 EXPENSE_SHEET_NAME = "개인카드 지출내역('26)"
+EXPENSE_SHEET_GID = 681510774  # gid from URL
 
 def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept: str, bank: str, account: str, account_holder: str):
     creds = Credentials(token=access_token)
     service = build("sheets", "v4", credentials=creds)
 
-    # 시트 이름의 작은따옴표를 ''로 이스케이프 (Sheets API 범위 표기 규칙)
+    # 시트 이름 따옴표 이스케이프
     sheet_ref = EXPENSE_SHEET_NAME.replace("'", "''")
 
-    # 마지막 NO 값 조회
+    # 마지막 NO가 있는 행 찾기 (0-indexed)
     no_values = service.spreadsheets().values().get(
         spreadsheetId=EXPENSE_SHEET_ID,
         range=f"'{sheet_ref}'!A18:A"
     ).execute().get("values", [])
 
     last_no = 0
-    for row in no_values:
+    last_data_row_0idx = 17  # 0-indexed, 기본값 = row 18 (헤더 다음)
+
+    for i, row in enumerate(no_values):
         if row:
             try:
                 n = int(str(row[0]).strip())
-                if n > last_no:
-                    last_no = n
+                last_no = max(last_no, n)
+                last_data_row_0idx = 17 + i  # row 18 = index 17
             except Exception:
                 pass
+
+    insert_at = last_data_row_0idx + 1  # 삽입할 위치 (0-indexed)
 
     # 부서: " 파트" 제거, 계좌: "-" 제거
     dept_clean = re.sub(r'\s*파트\s*$', '', dept).strip()
@@ -321,15 +326,31 @@ def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept
             account_holder,    # 예금주명
         ])
 
-    service.spreadsheets().values().append(
+    # 정확한 위치에 행 삽입
+    service.spreadsheets().batchUpdate(
         spreadsheetId=EXPENSE_SHEET_ID,
-        range=f"'{sheet_ref}'!A18",
+        body={"requests": [{
+            "insertDimension": {
+                "range": {
+                    "sheetId": EXPENSE_SHEET_GID,
+                    "dimension": "ROWS",
+                    "startIndex": insert_at,
+                    "endIndex": insert_at + len(rows)
+                },
+                "inheritFromBefore": True
+            }
+        }]}
+    ).execute()
+
+    # 삽입된 행에 데이터 쓰기
+    service.spreadsheets().values().update(
+        spreadsheetId=EXPENSE_SHEET_ID,
+        range=f"'{sheet_ref}'!A{insert_at + 1}",  # 1-indexed
         valueInputOption="USER_ENTERED",
-        insertDataOption="INSERT_ROWS",
         body={"values": rows}
     ).execute()
 
-    print(f"[Sheets] {len(rows)}행 추가 완료")
+    print(f"[Sheets] {len(rows)}행 삽입 완료 (row {insert_at + 1})")
 
 
 class MailRequest(BaseModel):
