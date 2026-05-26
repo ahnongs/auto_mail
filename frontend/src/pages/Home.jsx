@@ -120,7 +120,64 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               </div>
             )}
 
-            {/* 수신자 */}
+            {/* 1. 개인정보 */}
+            <div style={s.section}>
+              <div style={s.sectionTitle}>개인정보</div>
+              <div style={s.sigGrid}>
+                <Field label="이름 (한글)" required>
+                  <input style={s.input} placeholder="홍 길 동"
+                    value={draft.sigNameKo} onChange={e => set('sigNameKo', formatNameKo(e.target.value))} />
+                </Field>
+                <Field label="이름 (영문)">
+                  <input style={s.input} placeholder="Gildong Hong"
+                    value={draft.sigNameEn} onChange={e => set('sigNameEn', e.target.value)} />
+                </Field>
+              </div>
+              <Field label="소속 부서">
+                <select style={s.input} value={draft.sigPosition || ''} onChange={e => {
+                  const v = e.target.value
+                  set('sigPosition', v)
+                  set('dept', v ? v + ' 파트' : '')
+                }}>
+                  <option value="">선택</option>
+                  <option value="마케팅기획디자인개발">마케팅기획디자인개발 파트</option>
+                </select>
+              </Field>
+              <Field label="직책">
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['매니저', 'PM', '파트장'].map(r => (
+                    <button key={r} type="button"
+                      style={{ padding: '7px 16px', border: `1.5px solid ${draft.sigRole === r ? '#667eea' : '#e8e8e8'}`, borderRadius: 8, background: draft.sigRole === r ? '#f0f0ff' : '#fff', color: draft.sigRole === r ? '#667eea' : '#555', fontSize: 13, fontWeight: draft.sigRole === r ? 700 : 400, cursor: 'pointer' }}
+                      onClick={() => set('sigRole', draft.sigRole === r ? '' : r)}>{r}</button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="전화번호">
+                <input style={s.input} placeholder="010-0000-0000"
+                  value={draft.sigPhone} onChange={e => set('sigPhone', formatPhone(e.target.value))} />
+              </Field>
+            </div>
+
+            {/* 2. 계좌 정보 */}
+            <div style={s.section}>
+              <div style={s.sectionTitle}>계좌 정보 <span style={{ fontSize: 11, fontWeight: 400, color: '#aaa' }}>지출결의서 자동입력</span></div>
+              <div style={s.sigGrid}>
+                <Field label="은행명">
+                  <input style={s.input} placeholder="예: 국민은행"
+                    value={draft.bank} onChange={e => set('bank', e.target.value)} />
+                </Field>
+                <Field label="예금주">
+                  <input style={s.input} placeholder="예금주 이름"
+                    value={draft.accountHolder} onChange={e => set('accountHolder', e.target.value)} />
+                </Field>
+              </div>
+              <Field label="계좌번호">
+                <input style={s.input} placeholder="000-0000-0000-00"
+                  value={draft.account} onChange={e => set('account', e.target.value)} />
+              </Field>
+            </div>
+
+            {/* 3. 수신자 */}
             <div style={s.section}>
               <div style={s.sectionTitle}>수신자</div>
               {draft.sigRole !== '파트장' && (
@@ -141,101 +198,47 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 <input style={s.input} placeholder="경영관리파트장@stardoc1.com"
                   value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
               </Field>
-              <Field label="소속 부서">
-                <select style={s.input} value={draft.sigPosition || ''} onChange={e => {
-                  const v = e.target.value
-                  set('sigPosition', v)
-                  set('dept', v ? v + ' 파트' : '')
-                }}>
-                  <option value="">선택</option>
-                  <option value="마케팅기획디자인개발">마케팅기획디자인개발 파트</option>
-                </select>
-              </Field>
             </div>
 
-            {/* 계좌 정보 */}
+            {/* 4. 회사 로고 */}
             <div style={s.section}>
-              <div style={s.sectionTitle}>계좌 정보 (지출결의서 자동입력)</div>
-              <div style={s.sigGrid}>
-                <Field label="은행명">
-                  <input style={s.input} placeholder="예: 국민은행"
-                    value={draft.bank} onChange={e => set('bank', e.target.value)} />
-                </Field>
-                <Field label="예금주">
-                  <input style={s.input} placeholder="예금주 이름"
-                    value={draft.accountHolder} onChange={e => set('accountHolder', e.target.value)} />
-                </Field>
-              </div>
-              <Field label="계좌번호">
-                <input style={s.input} placeholder="000-0000-0000-00"
-                  value={draft.account} onChange={e => set('account', e.target.value)} />
-              </Field>
-            </div>
-
-            {/* 메일 서명 */}
-            <div style={s.section}>
-              <div style={s.sectionTitle}>메일 서명</div>
-              <div style={s.sigDesc}>입력한 내용으로 공식 서명 양식이 자동 생성됩니다.</div>
-              <div style={s.sigGrid}>
-                <Field label="이름 (한글)">
-                  <input style={s.input} placeholder="홍 길 동"
-                    value={draft.sigNameKo} onChange={e => set('sigNameKo', formatNameKo(e.target.value))} />
-                </Field>
-                <Field label="이름 (영문)">
-                  <input style={s.input} placeholder="Gildong Hong"
-                    value={draft.sigNameEn} onChange={e => set('sigNameEn', e.target.value)} />
-                </Field>
-              </div>
-              <Field label="직책">
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {['매니저', 'PM', '파트장'].map(r => (
-                    <button key={r} type="button"
-                      style={{ padding: '7px 16px', border: `1.5px solid ${draft.sigRole === r ? '#667eea' : '#e8e8e8'}`, borderRadius: 8, background: draft.sigRole === r ? '#f0f0ff' : '#fff', color: draft.sigRole === r ? '#667eea' : '#555', fontSize: 13, fontWeight: draft.sigRole === r ? 700 : 400, cursor: 'pointer' }}
-                      onClick={() => set('sigRole', draft.sigRole === r ? '' : r)}>{r}</button>
-                  ))}
+              <div style={s.sectionTitle}>회사 로고 이미지</div>
+              {draft.logoImageData ? (
+                <div>
+                  <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
+                    style={{ maxHeight: 50, display: 'block', marginBottom: 8, border: '1px solid #eee', borderRadius: 4 }} alt="로고" />
+                  <button style={s.removeBtn} onClick={() => { set('logoImageData', ''); set('logoImageType', '') }}>
+                    ✕ 로고 제거
+                  </button>
                 </div>
-              </Field>
-              <Field label="전화번호">
-                <input style={s.input} placeholder="010-0000-0000"
-                  value={draft.sigPhone} onChange={e => set('sigPhone', formatPhone(e.target.value))} />
-              </Field>
-              <Field label="회사 로고 이미지">
-                <div style={s.sigDesc}>파일 선택으로 로고 이미지를 업로드하세요</div>
-                {draft.logoImageData ? (
-                  <div>
-                    <img src={`data:${draft.logoImageType};base64,${draft.logoImageData}`}
-                      style={{ maxHeight: 50, display: 'block', marginBottom: 6, border: '1px solid #eee', borderRadius: 4 }} alt="로고" />
-                    <button style={s.removeBtn} onClick={() => { set('logoImageData', ''); set('logoImageType', '') }}>
-                      ✕ 로고 제거
-                    </button>
-                  </div>
-                ) : (
-                  <label style={s.uploadBtn}>
-                    🖼️ 로고 이미지 업로드
-                    <input type="file" accept="image/*" style={{ display: 'none' }}
-                      onChange={e => {
-                        const f = e.target.files[0]
-                        if (!f) return
-                        const reader = new FileReader()
-                        reader.onload = ev => {
-                          const [meta, data] = ev.target.result.split(',')
-                          set('logoImageData', data)
-                          set('logoImageType', meta.match(/:(.*?);/)[1])
-                        }
-                        reader.readAsDataURL(f)
-                      }} />
-                  </label>
-                )}
-              </Field>
+              ) : (
+                <label style={s.uploadBtn}>
+                  🖼️ 로고 이미지 업로드
+                  <input type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={e => {
+                      const f = e.target.files[0]
+                      if (!f) return
+                      const reader = new FileReader()
+                      reader.onload = ev => {
+                        const [meta, data] = ev.target.result.split(',')
+                        set('logoImageData', data)
+                        set('logoImageType', meta.match(/:(.*?);/)[1])
+                      }
+                      reader.readAsDataURL(f)
+                    }} />
+                </label>
+              )}
+            </div>
 
-              {/* 서명 미리보기 */}
-              {(draft.sigNameKo || draft.sigPosition) && (
+            {/* 5. 메일 서명 미리보기 */}
+            {(draft.sigNameKo || draft.sigPosition) && (
+              <div style={s.section}>
+                <div style={s.sectionTitle}>메일 서명 미리보기</div>
                 <div style={s.sigPreview}>
-                  <div style={s.sigPreviewLabel}>미리보기</div>
                   <div style={{ fontFamily: "'Noto Sans',sans-serif", lineHeight: 1.2, color: '#000' }}>
                     <p style={{ margin: 0 }}>
                       <span style={{ fontSize: 14, fontWeight: 700 }}>{draft.sigNameKo}</span>
-                      {draft.sigNameEn && <span style={{ fontSize: 11, fontWeight: 400, marginLeft: 6 }}> {draft.sigNameEn}</span>}
+                      {draft.sigNameEn && <span style={{ fontSize: 11, fontWeight: 400, marginLeft: 6 }}>{draft.sigNameEn}</span>}
                     </p>
                     {(draft.sigPosition || draft.sigRole) && (
                       <p style={{ margin: 0, fontSize: 13 }}>
@@ -255,8 +258,8 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div style={s.modalActions} className="r-modal-actions">
               <button style={s.cancelBtn} onClick={() => setShowSettings(false)}>취소</button>
