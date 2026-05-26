@@ -19,6 +19,7 @@ import uuid
 import base64
 import os
 import json
+import re
 import httpx
 
 try:
@@ -53,6 +54,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/spreadsheets",
 ]
 
 
@@ -257,6 +259,76 @@ def logout():
     return response
 
 
+EXPENSE_SHEET_ID = "178YnlC8kKpSKeKm500tgaSkRmEIJzmEw0FSmfdNA9XM"
+EXPENSE_SHEET_NAME = "개인카드 지출내역('26)"
+
+def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept: str, bank: str, account: str, account_holder: str):
+    creds = Credentials(token=access_token)
+    service = build("sheets", "v4", credentials=creds)
+
+    # 마지막 NO 값 조회
+    no_values = service.spreadsheets().values().get(
+        spreadsheetId=EXPENSE_SHEET_ID,
+        range=f"'{EXPENSE_SHEET_NAME}'!A18:A"
+    ).execute().get("values", [])
+
+    last_no = 0
+    for row in no_values:
+        if row:
+            try:
+                n = int(str(row[0]).strip())
+                if n > last_no:
+                    last_no = n
+            except Exception:
+                pass
+
+    # 부서: " 파트" 제거, 계좌: "-" 제거
+    dept_clean = re.sub(r'\s*파트\s*$', '', dept).strip()
+    account_clean = account.replace("-", "")
+
+    rows = []
+    for i, item in enumerate(items):
+        date_str = item.get("date", "")
+        try:
+            d = datetime.fromisoformat(date_str) if date_str else datetime.now()
+            month_str = f"{str(d.year)[2:]}년 {str(d.month).zfill(2)}월"
+        except Exception:
+            now = datetime.now()
+            month_str = f"{str(now.year)[2:]}년 {str(now.month).zfill(2)}월"
+
+        category = item.get("category", "").replace("(", " (")
+        detail = f"{user_name} {item.get('detail', '')}".strip()
+        amount_raw = str(item.get("amount", "0")).replace(",", "")
+        try:
+            amount = int(amount_raw)
+        except Exception:
+            amount = 0
+
+        rows.append([
+            last_no + i + 1,  # NO
+            month_str,         # 월별
+            date_str,          # 사용일자
+            category,          # 계정과목
+            detail,            # 세부내용
+            amount,            # 결제금액
+            user_name,         # 사용자
+            dept_clean,        # 부서
+            bank,              # 은행명
+            account_clean,     # 계좌번호
+            account_holder,    # 예금주명
+        ])
+
+    service.spreadsheets().values().append(
+        spreadsheetId=EXPENSE_SHEET_ID,
+        range=f"'{EXPENSE_SHEET_NAME}'!A18",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": rows}
+    ).execute()
+
+    print(f"[Sheets] {len(rows)}행 추가 완료")
+
+
 class MailRequest(BaseModel):
     to: str
     subject: str
@@ -272,6 +344,12 @@ class MailRequest(BaseModel):
     bodyHtml: str = ""
     bodyImageData: str = ""
     bodyImageType: str = ""
+    sheetItems: list = []
+    sheetUserName: str = ""
+    sheetDept: str = ""
+    sheetBank: str = ""
+    sheetAccount: str = ""
+    sheetAccountHolder: str = ""
 
 
 @app.post("/mail/send")
@@ -382,6 +460,22 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
 
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
         result = service.users().messages().send(userId="me", body={"raw": raw}).execute()
+
+        # 지출결의서 시트 자동 기록 (sheetItems가 있을 때만)
+        if req.sheetItems:
+            try:
+                write_expense_to_sheets(
+                    access_token=access_token,
+                    items=req.sheetItems,
+                    user_name=req.sheetUserName,
+                    dept=req.sheetDept,
+                    bank=req.sheetBank,
+                    account=req.sheetAccount,
+                    account_holder=req.sheetAccountHolder,
+                )
+            except Exception as sheet_err:
+                print(f"[Sheets] 기록 실패: {sheet_err}")
+                # 메일 발송은 성공했으므로 시트 오류는 무시
 
         return {"status": "ok", "message_id": result.get("id", "")}
     except Exception as e:
