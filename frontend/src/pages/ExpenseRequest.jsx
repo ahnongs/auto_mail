@@ -97,6 +97,8 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
   const to = R.request
   const cc = [settings.ceoEmail, settings.directorEmail, settings.managerEmail].filter(Boolean).join(', ')
+  const previewTo = settings.testMode ? settings.testEmail : to
+  const previewCc = settings.testMode ? '' : cc
 
   const mmdd = (() => {
     const d = new Date()
@@ -261,8 +263,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={s.pVal}>{to}</span></div>
-            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{cc || '없음'}</span></div>
+            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
+            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
             {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />

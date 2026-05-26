@@ -52,6 +52,8 @@ export default function VacationRequest({ user, settings, onBack }) {
   const cc = isManager
     ? [settings.ceoEmail, settings.directorEmail].filter(Boolean).join(', ')
     : [settings.ceoEmail].filter(Boolean).join(', ')
+  const previewTo = settings.testMode ? settings.testEmail : to
+  const previewCc = settings.testMode ? '' : cc
 
   const periodText = useMemo(() => {
     if (!form.startDate) return '날짜를 선택해주세요'
@@ -358,13 +360,14 @@ export default function VacationRequest({ user, settings, onBack }) {
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
+            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}>
               <span style={s.pKey}>받는사람</span>
-              <span style={s.pVal}>{to || <span style={{ color: '#f59e0b' }}>설정 필요</span>}</span>
+              <span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo || <span style={{ color: '#f59e0b' }}>설정 필요</span>}</span>
             </div>
             <div style={s.pRow}>
               <span style={s.pKey}>참조</span>
-              <span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{cc || <span style={{ color: '#ccc' }}>없음</span>}</span>
+              <span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || <span style={{ color: '#ccc' }}>없음</span>}</span>
             </div>
             <div style={s.pRow}>
               <span style={s.pKey}>제목</span>
