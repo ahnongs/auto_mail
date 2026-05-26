@@ -18,9 +18,12 @@ const styles = {
   wrap: {
     position: 'fixed',
     bottom: 32,
-    left: '50%',
-    transform: 'translateX(-50%)',
+    left: 0,
+    right: 0,
+    display: 'flex',
+    justifyContent: 'center',
     zIndex: 9999,
+    pointerEvents: 'none',
   },
   toast: {
     display: 'flex',
@@ -32,8 +35,10 @@ const styles = {
     padding: '14px 20px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
     minWidth: 280,
+    maxWidth: 360,
     position: 'relative',
     overflow: 'hidden',
+    pointerEvents: 'auto',
   },
   progress: {
     position: 'absolute',

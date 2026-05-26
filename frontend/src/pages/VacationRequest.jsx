@@ -186,7 +186,7 @@ export default function VacationRequest({ user, settings, onBack }) {
       <div style={s.successCard}>
         <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
         <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: scheduleResult ? 12 : 24 }}>{to}에게 전송됐어요.</p>
+        <p style={{ color: '#888', marginBottom: scheduleResult ? 12 : 24 }}>{previewTo}에게 전송됐어요.</p>
         {scheduleResult && (
           <div style={{ background: '#f0fff4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#15803d', textAlign: 'left' }}>
             📅 사전 알림 예약 완료<br />

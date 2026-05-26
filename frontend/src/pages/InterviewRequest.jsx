@@ -75,7 +75,7 @@ export default function InterviewRequest({ user, settings, onBack }) {
       <div style={s.successCard}>
         <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
         <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{to}에게 전송됐어요.</p>
+        <p style={{ color: '#888', marginBottom: 24 }}>{previewTo}에게 전송됐어요.</p>
         <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
       </div>
     </div>
