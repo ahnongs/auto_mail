@@ -87,7 +87,7 @@ export default function VacationRequest({ user, settings, onBack }) {
   }, [form.startDate, user.name])
 
   const body = useMemo(() => {
-    let t = `아래와 같이 ${form.type}을(를) 사용하고자 하오니 확인 부탁드리겠습니다.\n\n`
+    let t = `아래와 같이 ${form.type}를 사용하고자 하오니 확인 부탁드리겠습니다.\n\n`
     t += `1. 성명 및 부서: ${user.name} ${form.dept || '(부서 미입력)'}\n`
     t += `2. 휴가기간: ${periodText}\n`
     t += `3. 휴가유형: ${form.type}\n`
