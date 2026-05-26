@@ -141,7 +141,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
         const isImage = attachFile.type.startsWith('image/')
         const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
 
-        await sendMail({
+        const mailRes = await sendMail({
           to, cc, subject,
           body: plainBody,
           bodyHtml,
@@ -168,6 +168,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
             sheetAccountHolder: settings.accountHolder || '',
           } : {}),
         }, settings)
+        if (mailRes?.data?.sheet_error) {
+          console.error('[Sheets] 기록 실패:', mailRes.data.sheet_error)
+        }
         setSent(true)
       } catch (e) {
         setError('발송 실패: ' + (e.response?.data?.detail || e.message))

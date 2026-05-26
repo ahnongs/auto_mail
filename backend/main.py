@@ -465,6 +465,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
         result = service.users().messages().send(userId="me", body={"raw": raw}).execute()
 
         # 지출결의서 시트 자동 기록 (sheetItems가 있을 때만)
+        sheet_error = None
         if req.sheetItems:
             try:
                 write_expense_to_sheets(
@@ -477,10 +478,10 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     account_holder=req.sheetAccountHolder,
                 )
             except Exception as sheet_err:
+                sheet_error = str(sheet_err)
                 print(f"[Sheets] 기록 실패: {sheet_err}")
-                # 메일 발송은 성공했으므로 시트 오류는 무시
 
-        return {"status": "ok", "message_id": result.get("id", "")}
+        return {"status": "ok", "message_id": result.get("id", ""), "sheet_error": sheet_error}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
