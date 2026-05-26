@@ -181,6 +181,12 @@ def _save_all(data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def _load_scheduled():
+    if supabase:
+        try:
+            res = supabase.table("scheduled_mails").select("data").execute()
+            return [r["data"] for r in (res.data or [])]
+        except Exception as e:
+            print(f"[Supabase] scheduled load error: {e}")
     if not os.path.exists(SCHEDULED_FILE):
         return []
     try:
@@ -190,8 +196,32 @@ def _load_scheduled():
         return []
 
 def _save_scheduled(data: list):
-    with open(SCHEDULED_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    if not supabase:
+        with open(SCHEDULED_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+def _add_scheduled_item(item: dict):
+    if supabase:
+        try:
+            supabase.table("scheduled_mails").insert({
+                "id": item["id"], "uid": item["uid"], "data": item
+            }).execute()
+            return
+        except Exception as e:
+            print(f"[Supabase] scheduled insert error: {e}")
+    scheduled = _load_scheduled()
+    scheduled.append(item)
+    _save_scheduled(scheduled)
+
+def _delete_scheduled_item(schedule_id: str, uid: str):
+    if supabase:
+        try:
+            supabase.table("scheduled_mails").delete().eq("id", schedule_id).eq("uid", uid).execute()
+            return
+        except Exception as e:
+            print(f"[Supabase] scheduled delete error: {e}")
+    scheduled = _load_scheduled()
+    _save_scheduled([s for s in scheduled if not (s["id"] == schedule_id and s["uid"] == uid)])
 
 
 def _get_uid(session: str):
@@ -399,9 +429,7 @@ def schedule_mail(req: ScheduleMailRequest, session: str = Cookie(default=None))
         "signatureImageType": req.signatureImageType,
         "created_at": datetime.now().isoformat(),
     }
-    scheduled = _load_scheduled()
-    scheduled.append(item)
-    _save_scheduled(scheduled)
+    _add_scheduled_item(item)
     return {"status": "ok", "id": item["id"]}
 
 
@@ -421,8 +449,7 @@ def delete_scheduled(schedule_id: str, session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     uid = _get_uid(session)
-    scheduled = _load_scheduled()
-    _save_scheduled([s for s in scheduled if not (s["id"] == schedule_id and s["uid"] == uid)])
+    _delete_scheduled_item(schedule_id, uid)
     return {"status": "ok"}
 
 
@@ -445,10 +472,13 @@ async def do_send_scheduled():
             remaining.append(item)
             continue
 
+        # 발송 시도 후 Supabase에서 삭제 (성공/실패 무관하게 만료된 항목 제거)
+
         uid = item["uid"]
         refresh_token = _load_user(uid).get("refresh_token")
         if not refresh_token:
             print(f"[Scheduler] refresh_token 없음 uid={uid}")
+            _delete_scheduled_item(item["id"], item["uid"])
             continue
 
         try:
@@ -578,6 +608,8 @@ async def do_send_scheduled():
 
         except Exception as e:
             print(f"[Scheduler] 발송 실패: {e}")
+
+        _delete_scheduled_item(item["id"], item["uid"])
 
     _save_scheduled(remaining)
 
