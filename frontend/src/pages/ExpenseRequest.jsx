@@ -153,20 +153,18 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),
-          // 테스트모드일 때만 시트 자동 기록
-          ...(settings.testMode ? {
-            sheetItems: items.map(it => ({
-              date: it.date,
-              category: it.category,
-              detail: it.detail,
-              amount: it.amount,
-            })),
-            sheetUserName: user.name,
-            sheetDept: settings.dept || '',
-            sheetBank: settings.bank || '',
-            sheetAccount: settings.account || '',
-            sheetAccountHolder: settings.accountHolder || '',
-          } : {}),
+          // 메일 발송 시 시트 자동 기록
+          sheetItems: items.map(it => ({
+            date: it.date,
+            category: it.category,
+            detail: it.detail,
+            amount: it.amount,
+          })),
+          sheetUserName: user.name,
+          sheetDept: settings.dept || '',
+          sheetBank: settings.bank || '',
+          sheetAccount: settings.account || '',
+          sheetAccountHolder: settings.accountHolder || '',
         }, settings)
         if (mailRes?.data?.sheet_error) {
           console.error('[Sheets] 기록 실패:', mailRes.data.sheet_error)
