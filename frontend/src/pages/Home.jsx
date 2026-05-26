@@ -29,7 +29,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   const handleSave = () => {
     const normalized = {
       ...draft,
-      dept: draft.dept ? trimPart(draft.dept) + '파트' : '',
+      dept: draft.dept ? trimPart(draft.dept) + ' 파트' : '',
       sigPosition: trimPart(draft.sigPosition || ''),
       managerEmail: draft.sigRole === '파트장' ? '' : draft.managerEmail,
     }
