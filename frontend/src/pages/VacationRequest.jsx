@@ -3,6 +3,8 @@ import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
+import { useUndoSend } from '../hooks/useUndoSend'
+import UndoToast from '../components/UndoToast'
 
 
 const TYPES = [
@@ -42,6 +44,7 @@ export default function VacationRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const { pending, countdown, schedule, cancel } = useUndoSend()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const selectedType = TYPES.find(t => t.id === form.type)
@@ -111,69 +114,71 @@ export default function VacationRequest({ user, settings, onBack }) {
     if (!form.dept) return setError('부서를 입력해주세요.')
     if (!attachFile) return setError('플렉스 휴가 신청 캡처 이미지를 첨부해주세요.')
 
-    setSending(true)
-    try {
-      const { data: attachmentData, type: attachmentType } = await new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const [meta, data] = e.target.result.split(',')
-          resolve({ data, type: meta.match(/:(.*?);/)[1] })
+    schedule(async () => {
+      setSending(true)
+      try {
+        const { data: attachmentData, type: attachmentType } = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const [meta, data] = e.target.result.split(',')
+            resolve({ data, type: meta.match(/:(.*?);/)[1] })
+          }
+          reader.readAsDataURL(attachFile)
+        })
+
+        const isImage = attachmentType.startsWith('image/')
+
+        const sendRes = await sendMail({
+          to, cc, subject, body,
+          attachmentData,
+          attachmentName: attachFile.name,
+          attachmentType,
+          bodyImageData: isImage ? attachmentData : '',
+          bodyImageType: isImage ? attachmentType : '',
+          signatureImageData: settings.logoImageData || '',
+          signatureImageType: settings.logoImageType || '',
+          signatureHtml: buildSignatureHtml(settings, user.email),
+        }, settings)
+
+        // 예약 메일 등록
+        if (scheduleOpt.enabled && scheduleSendAt) {
+          try {
+            const dept = settings.dept || form.dept || ''
+            const coverBody = [
+              `안녕하세요, ${dept} ${user.name}, ${form.type} 사용 승인 건 공유드립니다.`,
+              ``,
+              `- 일시 및 시간: ${periodText}`,
+              ``,
+              `감사합니다.`,
+            ].join('\n')
+
+            await api.post('/mail/schedule', {
+              send_at: scheduleSendAt,
+              to: R.leave,
+              cc: '',
+              subject: `Fwd: ${subject}`,
+              body: coverBody,
+              cover_body: coverBody,
+              original_message_id: sendRes.data.message_id || '',
+              fwd_body_image_data: isImage ? attachmentData : '',
+              fwd_body_image_type: isImage ? attachmentType : '',
+              signatureHtml: buildSignatureHtml(settings, user.email),
+              signatureImageData: settings.logoImageData || '',
+              signatureImageType: settings.logoImageType || '',
+            })
+            setScheduleResult(scheduleSendAt)
+          } catch (e) {
+            console.error('예약 등록 실패:', e)
+          }
         }
-        reader.readAsDataURL(attachFile)
-      })
 
-      const isImage = attachmentType.startsWith('image/')
-
-      const sendRes = await sendMail({
-        to, cc, subject, body,
-        attachmentData,
-        attachmentName: attachFile.name,
-        attachmentType,
-        bodyImageData: isImage ? attachmentData : '',
-        bodyImageType: isImage ? attachmentType : '',
-        signatureImageData: settings.logoImageData || '',
-        signatureImageType: settings.logoImageType || '',
-        signatureHtml: buildSignatureHtml(settings, user.email),
-      }, settings)
-
-      // 예약 메일 등록
-      if (scheduleOpt.enabled && scheduleSendAt) {
-        try {
-          const dept = settings.dept || form.dept || ''
-          const coverBody = [
-            `안녕하세요, ${dept} ${user.name}, ${form.type} 사용 승인 건 공유드립니다.`,
-            ``,
-            `- 일시 및 시간: ${periodText}`,
-            ``,
-            `감사합니다.`,
-          ].join('\n')
-
-          await api.post('/mail/schedule', {
-            send_at: scheduleSendAt,
-            to: R.leave,
-            cc: '',
-            subject: `Fwd: ${subject}`,
-            body: coverBody,
-            cover_body: coverBody,
-            original_message_id: sendRes.data.message_id || '',
-            fwd_body_image_data: isImage ? attachmentData : '',
-            fwd_body_image_type: isImage ? attachmentType : '',
-            signatureHtml: buildSignatureHtml(settings, user.email),
-            signatureImageData: settings.logoImageData || '',
-            signatureImageType: settings.logoImageType || '',
-          })
-          setScheduleResult(scheduleSendAt)
-        } catch (e) {
-          console.error('예약 등록 실패:', e)
-        }
+        setSent(true)
+      } catch (e) {
+        setError('발송 실패: ' + (e.response?.data?.detail || e.message))
+      } finally {
+        setSending(false)
       }
-
-      setSent(true)
-    } catch (e) {
-      setError('발송 실패: ' + (e.response?.data?.detail || e.message))
-    } finally {
-      setSending(false)
-    }
+    })
   }
 
   if (sent) return (
@@ -356,9 +361,10 @@ export default function VacationRequest({ user, settings, onBack }) {
           {error && <div style={s.error}>⚠️ {error}</div>}
 
           <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }}
-            onClick={handleSend} disabled={sending}>
+            onClick={handleSend} disabled={sending || pending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
+          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         {/* 미리보기 */}

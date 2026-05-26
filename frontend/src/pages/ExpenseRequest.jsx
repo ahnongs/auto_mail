@@ -3,6 +3,8 @@ import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
+import { useUndoSend } from '../hooks/useUndoSend'
+import UndoToast from '../components/UndoToast'
 
 
 const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
@@ -88,6 +90,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const { pending, countdown, schedule, cancel } = useUndoSend()
 
   const setItem = (i, k, v) => setItems(arr => arr.map((it, idx) => idx === i ? { ...it, [k]: v } : it))
   const addItem = () => setItems(arr => [...arr, emptyItem()])
@@ -126,36 +129,38 @@ export default function ExpenseRequest({ user, settings, onBack }) {
     if (items.some(it => !it.detail || !it.amount)) return setError('지출 내역을 모두 입력해주세요.')
     if (!attachFile) return setError('영수증 파일을 첨부해주세요.')
 
-    setSending(true)
-    try {
-      const attachmentData = await new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result.split(',')[1])
-        reader.readAsDataURL(attachFile)
-      })
+    schedule(async () => {
+      setSending(true)
+      try {
+        const attachmentData = await new Promise(resolve => {
+          const reader = new FileReader()
+          reader.onload = e => resolve(e.target.result.split(',')[1])
+          reader.readAsDataURL(attachFile)
+        })
 
-      const isImage = attachFile.type.startsWith('image/')
-      const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
+        const isImage = attachFile.type.startsWith('image/')
+        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
 
-      await sendMail({
-        to, cc, subject,
-        body: plainBody,
-        bodyHtml,
-        attachmentData: isImage ? '' : attachmentData,
-        attachmentName: isImage ? '' : attachFile.name,
-        attachmentType: isImage ? '' : attachFile.type,
-        bodyImageData: isImage ? attachmentData : '',
-        bodyImageType: isImage ? attachFile.type : '',
-        signatureImageData: settings.logoImageData || '',
-        signatureImageType: settings.logoImageType || '',
-        signatureHtml: buildSignatureHtml(settings, user.email),
-      }, settings)
-      setSent(true)
-    } catch (e) {
-      setError('발송 실패: ' + (e.response?.data?.detail || e.message))
-    } finally {
-      setSending(false)
-    }
+        await sendMail({
+          to, cc, subject,
+          body: plainBody,
+          bodyHtml,
+          attachmentData: isImage ? '' : attachmentData,
+          attachmentName: isImage ? '' : attachFile.name,
+          attachmentType: isImage ? '' : attachFile.type,
+          bodyImageData: isImage ? attachmentData : '',
+          bodyImageType: isImage ? attachFile.type : '',
+          signatureImageData: settings.logoImageData || '',
+          signatureImageType: settings.logoImageType || '',
+          signatureHtml: buildSignatureHtml(settings, user.email),
+        }, settings)
+        setSent(true)
+      } catch (e) {
+        setError('발송 실패: ' + (e.response?.data?.detail || e.message))
+      } finally {
+        setSending(false)
+      }
+    })
   }
 
   if (sent) return (
@@ -254,9 +259,10 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
+          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending || pending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
+          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         {/* 미리보기 + 가이드 */}

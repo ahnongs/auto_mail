@@ -3,6 +3,8 @@ import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
+import { useUndoSend } from '../hooks/useUndoSend'
+import UndoToast from '../components/UndoToast'
 
 
 const URGENCY = ['일반', '긴급']
@@ -23,6 +25,7 @@ export default function DesignRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const { pending, countdown, schedule, cancel } = useUndoSend()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = R.design
@@ -62,30 +65,32 @@ export default function DesignRequest({ user, settings, onBack }) {
     if (!form.description) return setError('요청 내용을 입력해주세요.')
     if (!form.deadline) return setError('희망 마감일을 선택해주세요.')
 
-    setSending(true)
-    try {
-      const payload = {
-        to, cc, subject, body,
-        signatureImageData: settings.logoImageData || '',
-        signatureImageType: settings.logoImageType || '',
-        signatureHtml: buildSignatureHtml(settings, user.email),
+    schedule(async () => {
+      setSending(true)
+      try {
+        const payload = {
+          to, cc, subject, body,
+          signatureImageData: settings.logoImageData || '',
+          signatureImageType: settings.logoImageType || '',
+          signatureHtml: buildSignatureHtml(settings, user.email),
+        }
+        if (attachFile) {
+          payload.attachmentData = await new Promise(resolve => {
+            const reader = new FileReader()
+            reader.onload = e => resolve(e.target.result.split(',')[1])
+            reader.readAsDataURL(attachFile)
+          })
+          payload.attachmentName = attachFile.name
+          payload.attachmentType = attachFile.type
+        }
+        await sendMail(payload, settings)
+        setSent(true)
+      } catch (e) {
+        setError('발송 실패: ' + (e.response?.data?.detail || e.message))
+      } finally {
+        setSending(false)
       }
-      if (attachFile) {
-        payload.attachmentData = await new Promise(resolve => {
-          const reader = new FileReader()
-          reader.onload = e => resolve(e.target.result.split(',')[1])
-          reader.readAsDataURL(attachFile)
-        })
-        payload.attachmentName = attachFile.name
-        payload.attachmentType = attachFile.type
-      }
-      await sendMail(payload, settings)
-      setSent(true)
-    } catch (e) {
-      setError('발송 실패: ' + (e.response?.data?.detail || e.message))
-    } finally {
-      setSending(false)
-    }
+    })
   }
 
   if (sent) return (
@@ -161,9 +166,10 @@ export default function DesignRequest({ user, settings, onBack }) {
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
+          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending || pending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
+          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         <div style={s.previewCol} className="r-preview-col">

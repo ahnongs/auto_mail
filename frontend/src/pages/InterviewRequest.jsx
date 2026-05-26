@@ -2,6 +2,8 @@
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
+import { useUndoSend } from '../hooks/useUndoSend'
+import UndoToast from '../components/UndoToast'
 
 
 const TARGETS = ['파트장', '본부장', '경영지원 파트장']
@@ -18,6 +20,7 @@ export default function InterviewRequest({ user, settings, onBack }) {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const { pending, countdown, schedule, cancel } = useUndoSend()
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const to = R.interview
@@ -49,20 +52,22 @@ export default function InterviewRequest({ user, settings, onBack }) {
     if (!form.preferDate) return setError('희망 면담 일자를 선택해주세요.')
     if (!form.content) return setError('면담 내용을 입력해주세요.')
 
-    setSending(true)
-    try {
-      await sendMail({
-        to, cc, subject, body,
-        signatureImageData: settings.logoImageData || '',
-        signatureImageType: settings.logoImageType || '',
-        signatureHtml: buildSignatureHtml(settings, user.email),
-      }, settings)
-      setSent(true)
-    } catch (e) {
-      setError('발송 실패: ' + (e.response?.data?.detail || e.message))
-    } finally {
-      setSending(false)
-    }
+    schedule(async () => {
+      setSending(true)
+      try {
+        await sendMail({
+          to, cc, subject, body,
+          signatureImageData: settings.logoImageData || '',
+          signatureImageType: settings.logoImageType || '',
+          signatureHtml: buildSignatureHtml(settings, user.email),
+        }, settings)
+        setSent(true)
+      } catch (e) {
+        setError('발송 실패: ' + (e.response?.data?.detail || e.message))
+      } finally {
+        setSending(false)
+      }
+    })
   }
 
   if (sent) return (
@@ -124,9 +129,10 @@ export default function InterviewRequest({ user, settings, onBack }) {
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
+          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending || pending}>
             {sending ? '발송 중...' : '📤 메일 발송하기'}
           </button>
+          {pending && <UndoToast countdown={countdown} onCancel={cancel} />}
         </div>
 
         <div style={s.previewCol} className="r-preview-col">
