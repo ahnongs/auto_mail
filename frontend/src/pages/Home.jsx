@@ -40,10 +40,12 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   useEffect(() => {
     getScheduledMails().then(r => setScheduledMails(r.data)).catch(() => {})
   }, [])
-  const handleCancelSchedule = async (id) => {
-    if (!window.confirm('예약을 취소하시겠습니까?')) return
-    await cancelScheduledMail(id)
-    setScheduledMails(prev => prev.filter(m => m.id !== id))
+  const [confirmCancelId, setConfirmCancelId] = useState(null)
+  const handleCancelSchedule = (id) => setConfirmCancelId(id)
+  const handleConfirmCancel = async () => {
+    await cancelScheduledMail(confirmCancelId)
+    setScheduledMails(prev => prev.filter(m => m.id !== confirmCancelId))
+    setConfirmCancelId(null)
   }
 
   const handleSave = () => {
@@ -154,6 +156,26 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           </div>
         )}
       </main>
+
+      {/* 예약 취소 확인 모달 */}
+      {confirmCancelId && (
+        <div style={s.overlay}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', width: 300, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>예약 취소</div>
+            <div style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>예약을 취소하시겠습니까?</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setConfirmCancelId(null)}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: '1px solid #ddd', background: '#f5f5f5', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                아니오
+              </button>
+              <button onClick={handleConfirmCancel}
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: '#dc2626', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                예
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 설정 모달 */}
       {showSettings && (
