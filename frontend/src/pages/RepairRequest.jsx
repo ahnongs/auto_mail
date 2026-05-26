@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api } from '../api'
+import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
 
@@ -50,7 +50,7 @@ export default function RepairRequest({ user, settings, onBack }) {
         reader.onload = e => resolve(e.target.result.split(',')[1])
         reader.readAsDataURL(attachFile)
       })
-      await api.post('/mail/send', {
+      await sendMail({
         to, cc, subject, body,
         attachmentData,
         attachmentName: attachFile.name,
@@ -58,7 +58,7 @@ export default function RepairRequest({ user, settings, onBack }) {
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
-      })
+      }, settings)
       setSent(true)
     } catch (e) {
       setError('발송 실패: ' + (e.response?.data?.detail || e.message))

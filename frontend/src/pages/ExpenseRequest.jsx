@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api } from '../api'
+import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
 
@@ -135,7 +135,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
       const isImage = attachFile.type.startsWith('image/')
       const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
 
-      await api.post('/mail/send', {
+      await sendMail({
         to, cc, subject,
         body: plainBody,
         bodyHtml,
@@ -147,7 +147,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
-      })
+      }, settings)
       setSent(true)
     } catch (e) {
       setError('발송 실패: ' + (e.response?.data?.detail || e.message))

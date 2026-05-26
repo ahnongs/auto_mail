@@ -29,6 +29,8 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState('home')
   const [settings, setSettings] = useState(loadSettings)
+  const [testMode, setTestMode] = useState(false)
+  const [testEmail, setTestEmail] = useState('')
 
   useEffect(() => {
     api.get('/auth/me')
@@ -108,7 +110,7 @@ export default function App() {
 
   if (!user) return <Login />
 
-  const pageProps = { user, settings, onBack: goBack }
+  const pageProps = { user, settings: { ...settings, testMode, testEmail }, onBack: goBack }
 
   if (page === 'vacation') return <VacationRequest {...pageProps} />
   if (page === 'payment') return <PaymentRequest {...pageProps} />
@@ -126,6 +128,13 @@ export default function App() {
       onNavigate={navigate}
       settings={settings}
       onSaveSettings={handleSaveSettings}
+      testMode={testMode}
+      testEmail={testEmail}
+      onToggleTestMode={() => {
+        if (!testMode && !testEmail) setTestEmail(user?.email || '')
+        setTestMode(t => !t)
+      }}
+      onSetTestEmail={setTestEmail}
     />
   )
 }

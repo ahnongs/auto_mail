@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api } from '../api'
+import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
 
@@ -122,7 +122,7 @@ export default function VacationRequest({ user, settings, onBack }) {
 
       const isImage = attachmentType.startsWith('image/')
 
-      const sendRes = await api.post('/mail/send', {
+      const sendRes = await sendMail({
         to, cc, subject, body,
         attachmentData,
         attachmentName: attachFile.name,
@@ -132,7 +132,7 @@ export default function VacationRequest({ user, settings, onBack }) {
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
-      })
+      }, settings)
 
       // 예약 메일 등록
       if (scheduleOpt.enabled && scheduleSendAt) {

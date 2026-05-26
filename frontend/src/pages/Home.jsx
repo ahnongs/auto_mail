@@ -20,7 +20,7 @@ const formatNameKo = (v) => {
   return n.split('').join(' ')
 }
 
-export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings }) {
+export default function Home({ user, onLogout, onNavigate, settings, onSaveSettings, testMode, testEmail, onToggleTestMode, onSetTestEmail }) {
   const [showSettings, setShowSettings] = useState(false)
   const [settingsHint, setSettingsHint] = useState('')
   const [draft, setDraft] = useState(settings)
@@ -38,7 +38,9 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
     setSettingsHint('')
   }
 
-  const isMissingRecipients = (settings.sigRole !== '파트장' && !settings.managerEmail) || !settings.ceoEmail || !settings.directorEmail
+  const isMissingRecipients = testMode
+    ? !testEmail
+    : (settings.sigRole !== '파트장' && !settings.managerEmail) || !settings.ceoEmail || !settings.directorEmail
   const isMissingSignature = !settings.sigNameKo
   const isMissingAccount = !settings.bank || !settings.accountHolder || !settings.account
 
@@ -74,6 +76,11 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
         <div style={s.headerRight}>
           <img src={user.picture} alt={user.name} style={s.avatar} />
           <span style={s.userName}>{user.name}</span>
+          <button
+            style={{ ...s.settingsBtn, ...(testMode ? { background: '#fff3cd', color: '#b45309', border: '1.5px solid #fbbf24' } : {}) }}
+            onClick={onToggleTestMode}>
+            {testMode ? '🧪 테스트 중' : '🧪 테스트'}
+          </button>
           <button style={s.settingsBtn} onClick={() => { setDraft(settings); setShowSettings(true) }}>⚙️ 설정</button>
           <button style={s.logoutBtn} onClick={onLogout}>로그아웃</button>
         </div>
@@ -182,24 +189,38 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
             {/* 3. 수신자 */}
             <div style={s.section}>
               <div style={s.sectionTitle}>수신자</div>
-              {draft.sigRole !== '파트장' && (
-                <Field label="파트장 이메일" required>
-                  <input style={s.input} placeholder="파트장@stardoc1.com"
-                    value={draft.managerEmail} onChange={e => set('managerEmail', e.target.value)} />
-                </Field>
+              {testMode ? (
+                <>
+                  <div style={{ background: '#fff3cd', border: '1px solid #fbbf24', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#92400e' }}>
+                    🧪 테스트 모드 — 모든 메일이 아래 주소로만 발송됩니다
+                  </div>
+                  <Field label="테스트 수신 이메일" required>
+                    <input style={s.input} placeholder="test@example.com"
+                      value={testEmail} onChange={e => onSetTestEmail(e.target.value)} />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  {draft.sigRole !== '파트장' && (
+                    <Field label="파트장 이메일" required>
+                      <input style={s.input} placeholder="파트장@stardoc1.com"
+                        value={draft.managerEmail} onChange={e => set('managerEmail', e.target.value)} />
+                    </Field>
+                  )}
+                  <Field label="대표 이메일" required>
+                    <input style={s.input} placeholder="대표@stardoc1.com"
+                      value={draft.ceoEmail} onChange={e => set('ceoEmail', e.target.value)} />
+                  </Field>
+                  <Field label="본부장 이메일" required>
+                    <input style={s.input} placeholder="본부장@stardoc1.com"
+                      value={draft.directorEmail} onChange={e => set('directorEmail', e.target.value)} />
+                  </Field>
+                  <Field label="경영관리 파트장 이메일">
+                    <input style={s.input} placeholder="경영관리파트장@stardoc1.com"
+                      value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
+                  </Field>
+                </>
               )}
-              <Field label="대표 이메일" required>
-                <input style={s.input} placeholder="대표@stardoc1.com"
-                  value={draft.ceoEmail} onChange={e => set('ceoEmail', e.target.value)} />
-              </Field>
-              <Field label="본부장 이메일" required>
-                <input style={s.input} placeholder="본부장@stardoc1.com"
-                  value={draft.directorEmail} onChange={e => set('directorEmail', e.target.value)} />
-              </Field>
-              <Field label="경영관리 파트장 이메일">
-                <input style={s.input} placeholder="경영관리파트장@stardoc1.com"
-                  value={draft.bizManagerEmail} onChange={e => set('bizManagerEmail', e.target.value)} />
-              </Field>
             </div>
 
             {/* 4. 회사 로고 */}

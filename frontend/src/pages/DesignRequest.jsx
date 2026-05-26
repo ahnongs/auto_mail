@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api } from '../api'
+import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 
 
@@ -77,7 +77,7 @@ export default function DesignRequest({ user, settings, onBack }) {
         payload.attachmentName = attachFile.name
         payload.attachmentType = attachFile.type
       }
-      await api.post('/mail/send', payload)
+      await sendMail(payload, settings)
       setSent(true)
     } catch (e) {
       setError('발송 실패: ' + (e.response?.data?.detail || e.message))

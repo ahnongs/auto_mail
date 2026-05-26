@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api } from '../api'
+import { api, sendMail } from '../api'
 
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -96,14 +96,14 @@ export default function ClockFixRequest({ user, settings, onBack }) {
     setSending(true)
     try {
       const bodyHtml = buildBodyHtml({ user, settings, form })
-      await api.post('/mail/send', {
+      await sendMail({
         to, cc, subject,
         body: plainBody,
         bodyHtml,
         signatureImageData: settings.logoImageData || '',
         signatureImageType: settings.logoImageType || '',
         signatureHtml: buildSignatureHtml(settings, user.email),
-      })
+      }, settings)
       setSent(true)
     } catch (e) {
       setError('발송 실패: ' + (e.response?.data?.detail || e.message))
