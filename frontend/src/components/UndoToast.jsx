@@ -17,9 +17,9 @@ export default function UndoToast({ countdown, onCancel, total = 10 }) {
 const styles = {
   wrap: {
     position: 'fixed',
-    bottom: 32,
-    left: 0,
-    right: 0,
+    bottom: 48,       // iOS 홈바(34px) + 여유
+    left: 16,
+    right: 16,
     display: 'flex',
     justifyContent: 'center',
     zIndex: 9999,
@@ -34,8 +34,8 @@ const styles = {
     borderRadius: 14,
     padding: '14px 20px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
-    minWidth: 280,
-    maxWidth: 360,
+    width: '100%',    // 모바일: 화면 가득 채움
+    maxWidth: 400,    // PC: 최대 400px
     position: 'relative',
     overflow: 'hidden',
     pointerEvents: 'auto',
