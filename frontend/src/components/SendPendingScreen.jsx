@@ -4,7 +4,6 @@ export default function SendPendingScreen({ countdown, onCancel, onSendNow, tota
   return (
     <div style={s.page}>
       <div style={s.card}>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>📤</div>
         <h2 style={s.title}>{countdown}초 후 발송됩니다</h2>
         <p style={s.sub}>취소하면 다시 작성 화면으로 돌아가요</p>
 
@@ -13,8 +12,8 @@ export default function SendPendingScreen({ countdown, onCancel, onSendNow, tota
         </div>
 
         <div style={s.btnRow}>
-          <button style={s.cancelBtn} onClick={onCancel}>✕ 전송 취소</button>
-          <button style={s.sendNowBtn} onClick={onSendNow}>⚡ 바로 전송</button>
+          <button style={s.cancelBtn} onClick={onCancel}>전송 취소</button>
+          <button style={s.sendNowBtn} onClick={onSendNow}>바로 전송</button>
         </div>
       </div>
     </div>
