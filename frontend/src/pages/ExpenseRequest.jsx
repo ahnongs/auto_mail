@@ -154,7 +154,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),
           // 테스트모드일 때만 시트 자동 기록
-          ...(settings.testMode ? {
+          ...(settings.testMode ? (console.log('[Sheets] testMode ON, items:', items) || {
             sheetItems: items.map(it => ({
               date: it.date,
               category: it.category,
@@ -166,8 +166,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
             sheetBank: settings.bank || '',
             sheetAccount: settings.account || '',
             sheetAccountHolder: settings.accountHolder || '',
-          } : {}),
+          }) : {}),
         }, settings)
+        console.log('[Sheets] 응답:', mailRes?.data)
         if (mailRes?.data?.sheet_error) {
           console.error('[Sheets] 기록 실패:', mailRes.data.sheet_error)
         }
