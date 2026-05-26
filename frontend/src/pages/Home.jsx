@@ -126,7 +126,9 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               <div style={s.sigGrid}>
                 <Field label="이름 (한글)" required>
                   <input style={s.input} placeholder="홍 길 동"
-                    value={draft.sigNameKo} onChange={e => set('sigNameKo', formatNameKo(e.target.value))} />
+                    value={draft.sigNameKo}
+                    onChange={e => set('sigNameKo', e.target.value)}
+                    onBlur={e => set('sigNameKo', formatNameKo(e.target.value))} />
                 </Field>
                 <Field label="이름 (영문)">
                   <input style={s.input} placeholder="Gildong Hong"
