@@ -266,10 +266,13 @@ def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept
     creds = Credentials(token=access_token)
     service = build("sheets", "v4", credentials=creds)
 
+    # 시트 이름의 작은따옴표를 ''로 이스케이프 (Sheets API 범위 표기 규칙)
+    sheet_ref = EXPENSE_SHEET_NAME.replace("'", "''")
+
     # 마지막 NO 값 조회
     no_values = service.spreadsheets().values().get(
         spreadsheetId=EXPENSE_SHEET_ID,
-        range=f"'{EXPENSE_SHEET_NAME}'!A18:A"
+        range=f"'{sheet_ref}'!A18:A"
     ).execute().get("values", [])
 
     last_no = 0
@@ -320,7 +323,7 @@ def write_expense_to_sheets(access_token: str, items: list, user_name: str, dept
 
     service.spreadsheets().values().append(
         spreadsheetId=EXPENSE_SHEET_ID,
-        range=f"'{EXPENSE_SHEET_NAME}'!A18",
+        range=f"'{sheet_ref}'!A18",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body={"values": rows}
