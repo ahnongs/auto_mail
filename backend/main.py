@@ -121,7 +121,7 @@ async def google_callback(code: str):
         httponly=True,
         samesite="lax",
         secure=FRONTEND_URL.startswith("https://"),
-        max_age=3600,
+        max_age=60 * 60 * 24 * 30,  # 30일
     )
     return response
 
