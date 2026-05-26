@@ -76,11 +76,12 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
         <div style={s.headerRight}>
           <img src={user.picture} alt={user.name} style={s.avatar} />
           <span style={s.userName}>{user.name}</span>
-          <button
-            style={{ ...s.settingsBtn, ...(testMode ? { background: '#fff3cd', color: '#b45309', border: '1.5px solid #fbbf24' } : {}) }}
-            onClick={onToggleTestMode}>
-            {testMode ? '🧪 테스트 중' : '🧪 테스트'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={onToggleTestMode}>
+            <span style={{ fontSize: 11, color: testMode ? '#b45309' : '#aaa', fontWeight: 600, userSelect: 'none' }}>🧪 테스트</span>
+            <div style={{ width: 36, height: 20, borderRadius: 10, background: testMode ? '#f59e0b' : '#ddd', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+              <div style={{ position: 'absolute', top: 2, left: testMode ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
+            </div>
+          </div>
           <button style={s.settingsBtn} onClick={() => { setDraft(settings); setShowSettings(true) }}>⚙️ 설정</button>
           <button style={s.logoutBtn} onClick={onLogout}>로그아웃</button>
         </div>
