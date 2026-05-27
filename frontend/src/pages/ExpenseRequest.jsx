@@ -96,12 +96,6 @@ function buildBodyHtml({ user, settings, items, total, attachFile }) {
   html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};text-align:center;">₩${total.toLocaleString()}</td>`
   html += `<td ${thTd()}></td></tr>`
 
-  // 첨부파일 안내
-  if (attachFile) {
-    html += `<tr style="height:21px"><td ${thTd()} colspan="7"></td></tr>`
-    html += `<tr style="height:21px"><td style="${base}font-weight:bold;" colspan="7">&lt;첨부파일&gt;<br>${attachFile.name}</td></tr>`
-  }
-
   html += `</table></div>`
   return html
 }
