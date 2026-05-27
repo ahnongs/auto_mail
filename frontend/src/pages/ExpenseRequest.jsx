@@ -22,64 +22,87 @@ const CATEGORY_GUIDE = [
 ]
 const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
-function buildBodyHtml({ user, settings, items, total, attachFile, isImage }) {
-  const tdStyle = 'border:1px solid #ccc;padding:6px 10px;font-size:13px;'
-  const thStyle = tdStyle + 'background:#f0f0f0;font-weight:700;text-align:center;'
+function buildBodyHtml({ user, settings, items, total, attachFile }) {
+  const borderOut  = '1px solid rgb(0,0,0)'
+  const borderDash = '1px dashed rgb(0,0,0)'
+  const bgHeader   = 'background-color:rgb(243,243,243);font-family:"Noto Sans KR";font-weight:bold;text-align:center;'
+  const base       = 'overflow:hidden;padding:2px 3px;vertical-align:bottom;font-size:10pt;font-family:Arial;'
+  const thTd       = (extra='') => `style="${base}${extra}"`
 
-  let html = `<div style="font-family:sans-serif;font-size:14px;color:#333;line-height:1.8;">`
+  let html = `<div style="font-family:Arial;font-size:10pt;color:#222;line-height:1.6;">`
   html += `<p>아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.</p>`
 
-  // 작성자 정보
-  html += `<p style="font-weight:700;margin-top:16px;">■ 작성자 정보</p>`
-  html += `<table style="border-collapse:collapse;width:100%;margin-bottom:16px;">`
-  html += `<tr>`
-  html += `<td style="${thStyle}width:80px;">이름</td><td style="${tdStyle}">${user.name}</td>`
-  html += `<td style="${thStyle}width:80px;">부서</td><td style="${tdStyle}">${settings.dept || '-'}</td>`
-  html += `</tr><tr>`
-  html += `<td style="${thStyle}">계좌정보</td>`
-  html += `<td style="${tdStyle}">${settings.bank || '-'}</td>`
-  html += `<td style="${tdStyle}">${settings.account || '-'}</td>`
-  html += `<td style="${tdStyle}">${settings.accountHolder || '-'}</td>`
-  html += `</tr></table>`
+  html += `<table cellspacing="0" cellpadding="0" dir="ltr" style="table-layout:fixed;font-size:10pt;font-family:Arial;border-collapse:collapse;">`
+  html += `<colgroup><col width="100"><col width="100"><col width="187"><col width="239"><col width="100"><col width="100"><col width="54"></colgroup>`
 
-  // 지출 내역
-  html += `<p style="font-weight:700;">■ 지출 내역</p>`
-  html += `<table style="border-collapse:collapse;width:100%;">`
-  html += `<tr>`
-  html += `<th style="${thStyle}width:40px;">NO</th>`
-  html += `<th style="${thStyle}width:90px;">사용 일자</th>`
-  html += `<th style="${thStyle}">구분(목적)</th>`
-  html += `<th style="${thStyle}">세부내용</th>`
-  html += `<th style="${thStyle}width:90px;">금액(원)</th>`
-  html += `<th style="${thStyle}width:80px;">비고</th>`
-  html += `</tr>`
+  // 시트 작성 여부
+  html += `<tr style="height:21px"><td ${thTd()} colspan="7">■ 전체 지출내역 시트 작성 여부: 완료</td></tr>`
+  html += `<tr style="height:21px"><td ${thTd()} colspan="7"></td></tr>`
 
+  // 작성자 정보 헤더
+  html += `<tr style="height:21px"><td ${thTd(`border-bottom:${borderOut};`)} colspan="6">■ 작성자 정보</td><td ${thTd()}></td></tr>`
+
+  // 이름 / 부서
+  html += `<tr style="height:21px">`
+  html += `<td style="${base}border-left:${borderOut};border-right:${borderOut};border-bottom:${borderOut};${bgHeader}vertical-align:middle;">이름</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderOut};text-align:center;" colspan="2">${user.name}</td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};${bgHeader}vertical-align:middle;">부서</td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};text-align:center;" colspan="2">${settings.dept || '-'}</td>`
+  html += `<td ${thTd()}></td></tr>`
+
+  // 계좌정보
+  html += `<tr style="height:21px">`
+  html += `<td style="${base}border-left:${borderOut};border-right:${borderOut};border-bottom:${borderOut};${bgHeader}vertical-align:middle;">계좌정보</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderOut};text-align:center;">${settings.bank || '-'}</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderOut};text-align:center;" colspan="2">${settings.account || '-'}</td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};text-align:center;" colspan="2">${settings.accountHolder || '-'}</td>`
+  html += `<td ${thTd()}></td></tr>`
+
+  html += `<tr style="height:21px"><td ${thTd()} colspan="7"></td></tr>`
+
+  // 지출 내역 헤더
+  html += `<tr style="height:21px"><td ${thTd(`border-bottom:${borderOut};`)} colspan="6">■ 지출 내역</td><td ${thTd()}></td></tr>`
+
+  // 컬럼 헤더
+  html += `<tr style="height:21px">`
+  html += `<td style="${base}border-left:${borderOut};border-right:${borderDash};border-bottom:${borderDash};text-align:center;">NO</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderDash};text-align:center;">사용 일자</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderDash};text-align:center;">구분(목적)</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderDash};text-align:center;">세부내용</td>`
+  html += `<td style="${base}border-right:${borderDash};border-bottom:${borderDash};text-align:center;">금액(원)</td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderDash};text-align:center;">비고</td>`
+  html += `<td ${thTd()}></td></tr>`
+
+  // 데이터 행
   items.forEach((it, i) => {
+    const isLast = i === items.length - 1
+    const bBottom = isLast ? borderOut : borderDash
     const amt = it.amount ? `₩${Number(it.amount.replace(/,/g, '')).toLocaleString()}` : '₩0'
-    html += `<tr>`
-    html += `<td style="${tdStyle}text-align:center;">${i + 1}</td>`
-    html += `<td style="${tdStyle}text-align:center;">${it.date || '-'}</td>`
-    html += `<td style="${tdStyle}">${it.category}</td>`
-    html += `<td style="${tdStyle}">${it.detail || '-'}</td>`
-    html += `<td style="${tdStyle}text-align:right;">${amt}</td>`
-    html += `<td style="${tdStyle}">${it.note || ''}</td>`
-    html += `</tr>`
+    html += `<tr style="height:21px">`
+    html += `<td style="${base}border-left:${borderOut};border-right:${borderDash};border-bottom:${bBottom};text-align:center;">${i + 1}</td>`
+    html += `<td style="${base}border-right:${borderDash};border-bottom:${bBottom};text-align:center;">${it.date || ''}</td>`
+    html += `<td style="${base}border-right:${borderDash};border-bottom:${bBottom};text-align:center;">${it.category}</td>`
+    html += `<td style="${base}border-right:${borderDash};border-bottom:${bBottom};text-align:center;">${it.detail || ''}</td>`
+    html += `<td style="${base}border-right:${borderDash};border-bottom:${bBottom};text-align:center;">${amt}</td>`
+    html += `<td style="${base}border-right:${borderOut};border-bottom:${bBottom};">${it.note || ''}</td>`
+    html += `<td ${thTd()}></td></tr>`
   })
 
-  html += `<tr>`
-  html += `<td colspan="4" style="${tdStyle}text-align:right;font-weight:700;background:#f0f0f0;">합계</td>`
-  html += `<td style="${tdStyle}text-align:right;font-weight:700;">₩${total.toLocaleString()}</td>`
-  html += `<td style="${tdStyle}"></td>`
-  html += `</tr></table>`
+  // 합계 행
+  html += `<tr style="height:21px">`
+  html += `<td ${thTd()} colspan="3"></td>`
+  html += `<td style="${base}border-right:${borderOut};"></td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};${bgHeader}vertical-align:middle;">합계</td>`
+  html += `<td style="${base}border-right:${borderOut};border-bottom:${borderOut};text-align:center;">₩${total.toLocaleString()}</td>`
+  html += `<td ${thTd()}></td></tr>`
 
+  // 첨부파일 안내
   if (attachFile) {
-    html += `<p style="margin-top:16px;"><strong>&lt;첨부파일&gt;</strong></p>`
-    if (!isImage) {
-      html += `<p style="margin:0;font-size:13px;">${attachFile.name}</p>`
-    }
+    html += `<tr style="height:21px"><td ${thTd()} colspan="7"></td></tr>`
+    html += `<tr style="height:21px"><td style="${base}font-weight:bold;" colspan="7">&lt;첨부파일&gt;<br>${attachFile.name}</td></tr>`
   }
 
-  html += `</div>`
+  html += `</table></div>`
   return html
 }
 
@@ -138,18 +161,17 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           reader.readAsDataURL(attachFile)
         })
 
-        const isImage = attachFile.type.startsWith('image/')
-        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
+        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile })
 
         const mailRes = await sendMail({
           to, cc, subject,
           body: plainBody,
           bodyHtml,
-          attachmentData: isImage ? '' : attachmentData,
-          attachmentName: isImage ? '' : attachFile.name,
-          attachmentType: isImage ? '' : attachFile.type,
-          bodyImageData: isImage ? attachmentData : '',
-          bodyImageType: isImage ? attachFile.type : '',
+          attachmentData: attachmentData,
+          attachmentName: attachFile.name,
+          attachmentType: attachFile.type,
+          bodyImageData: '',
+          bodyImageType: '',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),
