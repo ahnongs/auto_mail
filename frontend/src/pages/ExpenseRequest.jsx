@@ -30,7 +30,7 @@ function buildBodyHtml({ user, settings, items, total, attachFile }) {
   const thTd       = (extra='') => `style="${base}${extra}"`
 
   let html = `<div style="font-family:Arial;font-size:10pt;color:#222;line-height:1.6;">`
-  html += `<p>아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.</p>`
+  html += `<p>안녕하세요.<br>아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.</p>`
 
   html += `<table cellspacing="0" cellpadding="0" dir="ltr" style="table-layout:fixed;font-size:10pt;font-family:Arial;border-collapse:collapse;">`
   html += `<colgroup><col width="100"><col width="100"><col width="187"><col width="239"><col width="100"><col width="100"><col width="54"></colgroup>`
