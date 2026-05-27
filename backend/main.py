@@ -470,11 +470,12 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             msg = MIMEText(req.body, "plain", "utf-8")
 
         if has_attachment:
-            part = MIMEBase("application", "octet-stream")
+            att_type = req.attachmentType or "application/octet-stream"
+            main_type, sub_type = att_type.split("/", 1)
+            part = MIMEBase(main_type, sub_type)
             part.set_payload(base64.b64decode(req.attachmentData))
             encoders.encode_base64(part)
             part.add_header("Content-Disposition", f'attachment; filename="{req.attachmentName}"')
-            part.add_header("Content-Type", req.attachmentType or "application/octet-stream")
             if not isinstance(msg, MIMEMultipart):
                 outer = MIMEMultipart()
                 outer.attach(msg)

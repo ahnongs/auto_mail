@@ -25,7 +25,7 @@ const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount
 function buildBodyHtml({ user, settings, items, total, attachFile }) {
   const borderOut  = '1px solid rgb(0,0,0)'
   const borderDash = '1px dashed rgb(0,0,0)'
-  const bgHeader   = 'background-color:rgb(243,243,243);font-family:"Noto Sans KR";font-weight:bold;text-align:center;'
+  const bgHeader   = "background-color:rgb(243,243,243);font-family:'Noto Sans KR';font-weight:bold;text-align:center;"
   const base       = 'overflow:hidden;padding:2px 3px;vertical-align:bottom;font-size:10pt;font-family:Arial;'
   const thTd       = (extra='') => `style="${base}${extra}"`
 
