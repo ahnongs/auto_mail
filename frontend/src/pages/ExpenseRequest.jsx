@@ -128,7 +128,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const subject = `(지출결의서) ${settings.dept || form.dept || 'OOO파트'} ${user.name} 개인비용 사용의 건 ${mmdd}`
 
   const plainBody = useMemo(() => {
-    let t = `아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.\n\n`
+    let t = `안녕하세요.\n아래와 같이 개인비용 지출결의서를 작성하여 상신드리오니 결재 부탁드립니다.\n\n`
     t += `■ 작성자 정보\n`
     t += `  이름: ${user.name} / 부서: ${settings.dept || '(미입력)'}\n`
     t += `  계좌: ${settings.bank || '-'} ${settings.account || '-'} (${settings.accountHolder || '-'})\n\n`
