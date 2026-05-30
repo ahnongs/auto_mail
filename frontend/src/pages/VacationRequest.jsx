@@ -130,9 +130,9 @@ export default function VacationRequest({ user, settings, onBack }) {
 
         const sendRes = await sendMail({
           to, cc, subject, body,
-          attachmentData,
-          attachmentName: attachFile.name,
-          attachmentType,
+          attachmentData: '',
+          attachmentName: '',
+          attachmentType: '',
           bodyImageData: isImage ? attachmentData : '',
           bodyImageType: isImage ? attachmentType : '',
           signatureImageData: settings.logoImageData || '',
@@ -387,8 +387,8 @@ export default function VacationRequest({ user, settings, onBack }) {
             </div>
             {attachFile && (
               <div style={s.pRow}>
-                <span style={s.pKey}>첨부</span>
-                <span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span>
+                <span style={s.pKey}>이미지</span>
+                <span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📷 본문 삽입: {attachFile.name}</span>
               </div>
             )}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
