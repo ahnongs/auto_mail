@@ -420,7 +420,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             parts = [body_content]
             # 본문 이미지는 서명 위에
             if has_body_img:
-                parts.append('<br><img src="cid:body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
+                parts.append('<br><img src="cid:body_img" style="width:600px;max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
             if req.signatureHtml:
                 parts.append(
                     '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
@@ -668,7 +668,7 @@ async def do_send_scheduled():
                     fwd_img_data = item.get("fwd_body_image_data", "")
                     cover_html = esc(cover_body).replace("\n", "<br>")
                     orig_html  = esc(orig_plain)
-                    fwd_img_tag = '<br><img src="cid:fwd_body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">' if fwd_img_data else ''
+                    fwd_img_tag = '<br><img src="cid:fwd_body_img" style="width:600px;max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">' if fwd_img_data else ''
                     html_body = (
                         f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">{cover_html}</div>'
                         f'<br><br>'
