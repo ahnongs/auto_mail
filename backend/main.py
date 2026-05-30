@@ -447,13 +447,11 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     bimg_data = base64.b64decode(req.bodyImageData)
                     bimg_part = MIMEImage(bimg_data, _subtype=req.bodyImageType.split("/")[-1])
                     bimg_part.add_header("Content-ID", "<body_img>")
-                    bimg_part.add_header("Content-Disposition", "inline")
                     content.attach(bimg_part)
                 if has_logo:
                     img_data = base64.b64decode(req.signatureImageData)
                     img_part = MIMEImage(img_data, _subtype=req.signatureImageType.split("/")[-1])
                     img_part.add_header("Content-ID", "<signature_img>")
-                    img_part.add_header("Content-Disposition", "inline")
                     content.attach(img_part)
             else:
                 content = alt
@@ -708,13 +706,11 @@ async def do_send_scheduled():
                         fi = base64.b64decode(fwd_img_data)
                         fi_part = MIMEImage(fi, _subtype=fwd_img_type.split("/")[-1])
                         fi_part.add_header("Content-ID", "<fwd_body_img>")
-                        fi_part.add_header("Content-Disposition", "inline")
                         msg.attach(fi_part)
                     if sig_img_data:
                         img_data = base64.b64decode(sig_img_data)
                         img_part = MIMEImage(img_data, _subtype=sig_img_type.split("/")[-1])
                         img_part.add_header("Content-ID", "<signature_img>")
-                        img_part.add_header("Content-Disposition", "inline")
                         msg.attach(img_part)
                 else:
                     msg = alt
