@@ -414,16 +414,20 @@ class MailRequest(BaseModel):
     subject: str
     body: str
     cc: str = ""
+    # 단일 파일 필드 (하위 호환)
     attachmentData: str = ""
     attachmentName: str = ""
     attachmentType: str = ""
+    bodyImageData: str = ""
+    bodyImageType: str = ""
+    # 다중 파일 필드
+    bodyImages: list = []    # [{data, type}, ...]
+    attachments: list = []   # [{data, name, type}, ...]
     signatureImageData: str = ""
     signatureImageType: str = ""
     signatureText: str = ""
     signatureHtml: str = ""
     bodyHtml: str = ""
-    bodyImageData: str = ""
-    bodyImageType: str = ""
     sheetItems: list = []
     sheetUserName: str = ""
     sheetDept: str = ""
@@ -445,11 +449,22 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
 
         service = build("gmail", "v1", credentials=creds)
 
+        # 단일 필드(하위 호환) + 다중 필드 통합
+        all_body_images = []
+        if req.bodyImageData:
+            all_body_images.append({"data": req.bodyImageData, "type": req.bodyImageType})
+        all_body_images.extend(req.bodyImages)
+
+        all_attachments = []
+        if req.attachmentData:
+            all_attachments.append({"data": req.attachmentData, "name": req.attachmentName, "type": req.attachmentType})
+        all_attachments.extend(req.attachments)
+
         has_logo = bool(req.signatureImageData)
-        has_body_img = bool(req.bodyImageData)
+        has_body_imgs = bool(all_body_images)
         has_html_sig = bool(req.signatureHtml or req.signatureImageData)
-        needs_html = has_html_sig or bool(req.bodyHtml) or has_body_img
-        has_attachment = bool(req.attachmentData)
+        needs_html = has_html_sig or bool(req.bodyHtml) or has_body_imgs
+        has_attachments = bool(all_attachments)
 
         def build_html():
             if req.bodyHtml:
@@ -464,9 +479,9 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     f'{body_escaped}</div>'
                 )
             parts = [body_content]
-            # 본문 이미지는 서명 위에
-            if has_body_img:
-                parts.append('<br><img src="cid:body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
+            # 본문 이미지 (여러 장 지원)
+            for i in range(len(all_body_images)):
+                parts.append(f'<br><img src="cid:body_img_{i}" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
             if req.signatureHtml:
                 parts.append(
                     '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
@@ -478,7 +493,6 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     f'<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
                     f'<div style="font-size:13px;color:#555">{sig}</div>'
                 )
-            # 로고는 signatureHtml 안에 이미 포함되어 있으므로 별도 추가 안 함
             return "".join(parts)
 
         if needs_html:
@@ -486,13 +500,13 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             alt.attach(MIMEText(req.body, "plain", "utf-8"))
             alt.attach(MIMEText(build_html(), "html", "utf-8"))
 
-            if has_logo or has_body_img:
+            if has_logo or has_body_imgs:
                 content = MIMEMultipart("related")
                 content.attach(alt)
-                if has_body_img:
-                    bimg_data = base64.b64decode(req.bodyImageData)
-                    bimg_part = MIMEImage(bimg_data, _subtype=req.bodyImageType.split("/")[-1])
-                    bimg_part.add_header("Content-ID", "<body_img>")
+                for i, img in enumerate(all_body_images):
+                    bimg_data = base64.b64decode(img["data"])
+                    bimg_part = MIMEImage(bimg_data, _subtype=img["type"].split("/")[-1])
+                    bimg_part.add_header("Content-ID", f"<body_img_{i}>")
                     bimg_part.add_header("Content-Disposition", "inline")
                     content.attach(bimg_part)
                 if has_logo:
@@ -504,23 +518,23 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             else:
                 content = alt
 
-            if has_attachment:
+            if has_attachments:
                 msg = MIMEMultipart("mixed")
                 msg.attach(content)
             else:
                 msg = content
-        elif has_attachment:
+        elif has_attachments:
             msg = MIMEMultipart()
             msg.attach(MIMEText(req.body, "plain", "utf-8"))
         else:
             msg = MIMEText(req.body, "plain", "utf-8")
 
-        if has_attachment:
+        for att in all_attachments:
             part = MIMEBase("application", "octet-stream")
-            part.set_payload(base64.b64decode(req.attachmentData))
+            part.set_payload(base64.b64decode(att["data"]))
             encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f'attachment; filename="{req.attachmentName}"')
-            part.add_header("Content-Type", req.attachmentType or "application/octet-stream")
+            part.add_header("Content-Disposition", f'attachment; filename="{att["name"]}"')
+            part.add_header("Content-Type", att.get("type") or "application/octet-stream")
             if not isinstance(msg, MIMEMultipart):
                 outer = MIMEMultipart()
                 outer.attach(msg)

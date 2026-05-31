@@ -2,7 +2,7 @@
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
-import FileDropZone from '../components/FileDropZone'
+import MultiFileDropZone from '../components/MultiFileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
 
@@ -22,7 +22,7 @@ const CATEGORY_GUIDE = [
 ]
 const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
-function buildBodyHtml({ user, settings, items, total, attachFile, isImage }) {
+function buildBodyHtml({ user, settings, items, total, attachFiles }) {
   const tdStyle = 'border:1px solid #ccc;padding:6px 10px;font-size:13px;'
   const thStyle = tdStyle + 'background:#f0f0f0;font-weight:700;text-align:center;'
 
@@ -72,11 +72,13 @@ function buildBodyHtml({ user, settings, items, total, attachFile, isImage }) {
   html += `<td style="${tdStyle}"></td>`
   html += `</tr></table>`
 
-  if (attachFile) {
+  // 문서 첨부파일 목록 (이미지는 백엔드에서 본문에 인라인 삽입)
+  const docFiles = attachFiles.filter(f => !f.type.startsWith('image/'))
+  if (attachFiles.length > 0) {
     html += `<p style="margin-top:16px;"><strong>&lt;첨부파일&gt;</strong></p>`
-    if (!isImage) {
-      html += `<p style="margin:0;font-size:13px;">${attachFile.name}</p>`
-    }
+    docFiles.forEach(f => {
+      html += `<p style="margin:2px 0;font-size:13px;">📄 ${f.name}</p>`
+    })
   }
 
   html += `</div>`
@@ -86,7 +88,7 @@ function buildBodyHtml({ user, settings, items, total, attachFile, isImage }) {
 export default function ExpenseRequest({ user, settings, onBack }) {
   const [form, setForm] = useState({ dept: settings.dept || '' })
   const [items, setItems] = useState([emptyItem()])
-  const [attachFile, setAttachFile] = useState(null)
+  const [attachFiles, setAttachFiles] = useState([])
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -127,33 +129,37 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const handleSend = async () => {
     setError('')
     if (items.some(it => !it.detail || !it.amount)) return setError('지출 내역을 모두 입력해주세요.')
-    if (!attachFile) return setError('영수증 파일을 첨부해주세요.')
+    if (!attachFiles.length) return setError('영수증 파일을 첨부해주세요.')
 
     schedule(async () => {
       setSending(true)
       try {
-        const attachmentData = await new Promise(resolve => {
+        const readFile = (file) => new Promise(resolve => {
           const reader = new FileReader()
           reader.onload = e => resolve(e.target.result.split(',')[1])
-          reader.readAsDataURL(attachFile)
+          reader.readAsDataURL(file)
         })
 
-        const isImage = attachFile.type.startsWith('image/')
-        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFile, isImage })
+        const processed = await Promise.all(attachFiles.map(async f => ({
+          data: await readFile(f),
+          name: f.name,
+          type: f.type,
+          isImage: f.type.startsWith('image/'),
+        })))
+
+        const bodyImages = processed.filter(f => f.isImage).map(f => ({ data: f.data, type: f.type }))
+        const attachments = processed.filter(f => !f.isImage).map(f => ({ data: f.data, name: f.name, type: f.type }))
+        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFiles })
 
         const mailRes = await sendMail({
           to, cc, subject,
           body: plainBody,
           bodyHtml,
-          attachmentData: isImage ? '' : attachmentData,
-          attachmentName: isImage ? '' : attachFile.name,
-          attachmentType: isImage ? '' : attachFile.type,
-          bodyImageData: isImage ? attachmentData : '',
-          bodyImageType: isImage ? attachFile.type : '',
+          bodyImages,
+          attachments,
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),
-          // 메일 발송 시 시트 자동 기록
           sheetItems: items.map(it => ({
             date: it.date,
             category: it.category,
@@ -271,8 +277,15 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
           {/* 영수증 첨부 */}
           <div style={{ ...s.card, ...(error.includes('영수증') ? { border: '1.5px solid #fca5a5' } : {}) }}>
-            <div style={s.cardTitle}>📎 영수증 첨부 <span style={{ color: '#ef4444' }}>*</span></div>
-            <FileDropZone file={attachFile} onChange={setAttachFile} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={s.cardTitle}>📎 영수증 첨부 <span style={{ color: '#ef4444' }}>*</span></div>
+              {attachFiles.length > 0 && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#667eea', background: '#f0f0ff', borderRadius: 20, padding: '2px 10px' }}>
+                  {attachFiles.length}개
+                </span>
+              )}
+            </div>
+            <MultiFileDropZone files={attachFiles} onChange={setAttachFiles} />
           </div>
 
           {error && <div style={s.error}>⚠️ {error}</div>}
@@ -289,7 +302,16 @@ export default function ExpenseRequest({ user, settings, onBack }) {
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
             <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
-            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
+            {attachFiles.length > 0 && (
+              <div style={s.pRow}>
+                <span style={s.pKey}>첨부</span>
+                <span style={{ ...s.pVal, fontSize: 12 }}>
+                  {attachFiles.map((f, i) => (
+                    <span key={i} style={{ display: 'block', color: '#667eea' }}>📎 {f.name}</span>
+                  ))}
+                </span>
+              </div>
+            )}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
             <pre style={s.preBody}>{plainBody}</pre>
           </div>
