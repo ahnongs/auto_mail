@@ -14,7 +14,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 from typing import Any, Dict
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import uuid
 import base64
 import os
@@ -97,20 +97,25 @@ async def google_callback(code: str):
         )
     user_info = resp.json()
 
-    # refresh_token 저장 (예약 발송 시 사용)
+    # access_token, refresh_token, 만료시간을 서버에 저장
+    uid = user_info["id"]
+    existing = _load_user(uid)
+    existing["access_token"] = credentials.token
+    if credentials.expiry:
+        existing["token_expiry"] = credentials.expiry.isoformat()
+    else:
+        existing["token_expiry"] = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
     if credentials.refresh_token:
-        uid = user_info["id"]
-        existing = _load_user(uid)
         existing["refresh_token"] = credentials.refresh_token
-        _save_user(uid, existing)
+    _save_user(uid, existing)
 
+    # JWT에는 사용자 식별 정보만 포함 (access_token 제외)
     token = jwt.encode(
         {
             "sub": user_info["id"],
             "email": user_info["email"],
             "name": user_info.get("name", ""),
             "picture": user_info.get("picture", ""),
-            "access_token": credentials.token,
         },
         SECRET_KEY,
         algorithm="HS256",
@@ -231,6 +236,53 @@ def _get_uid(session: str):
         return jwt.decode(session, SECRET_KEY, algorithms=["HS256"])["sub"]
     except JWTError:
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
+
+
+def _get_valid_credentials(uid: str) -> Credentials:
+    """서버에 저장된 토큰을 조회하고, 만료됐으면 refresh하여 유효한 Credentials 반환."""
+    user_data = _load_user(uid)
+    access_token = user_data.get("access_token")
+    refresh_token = user_data.get("refresh_token")
+    token_expiry_str = user_data.get("token_expiry")
+
+    if not access_token and not refresh_token:
+        raise HTTPException(status_code=401, detail="인증 정보가 없습니다. 다시 로그인해주세요.")
+
+    # 만료 여부 확인 (5분 여유)
+    is_expired = True
+    if access_token and token_expiry_str:
+        try:
+            expiry = datetime.fromisoformat(token_expiry_str)
+            now = datetime.now(timezone.utc) if expiry.tzinfo else datetime.utcnow()
+            is_expired = expiry <= now + timedelta(minutes=5)
+        except Exception:
+            is_expired = True
+
+    if not is_expired:
+        return Credentials(token=access_token)
+
+    # 토큰 만료 → refresh_token으로 갱신
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
+
+    creds = Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+    )
+    creds.refresh(GoogleRequest())
+
+    # 갱신된 토큰 저장
+    user_data["access_token"] = creds.token
+    if creds.expiry:
+        user_data["token_expiry"] = creds.expiry.isoformat()
+    else:
+        user_data["token_expiry"] = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+    _save_user(uid, user_data)
+
+    return creds
 
 
 @app.get("/settings")
@@ -384,19 +436,13 @@ class MailRequest(BaseModel):
 def send_mail(req: MailRequest, session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
-    try:
-        payload = jwt.decode(session, SECRET_KEY, algorithms=["HS256"])
-    except JWTError:
-        raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
 
-    access_token = payload.get("access_token")
-    if not access_token:
-        raise HTTPException(status_code=401, detail="액세스 토큰이 없습니다. 다시 로그인해주세요.")
+    uid = _get_uid(session)
+    creds = _get_valid_credentials(uid)
 
     try:
         from email.mime.image import MIMEImage
 
-        creds = Credentials(token=access_token)
         service = build("gmail", "v1", credentials=creds)
 
         has_logo = bool(req.signatureImageData)
@@ -494,7 +540,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
         if req.sheetItems:
             try:
                 write_expense_to_sheets(
-                    access_token=access_token,
+                    access_token=creds.token,
                     items=req.sheetItems,
                     user_name=req.sheetUserName,
                     dept=req.sheetDept,
