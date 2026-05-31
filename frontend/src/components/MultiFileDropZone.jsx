@@ -51,8 +51,8 @@ export default function MultiFileDropZone({ files, onChange }) {
   const addFiles = useCallback((newFiles) => {
     const arr = Array.from(newFiles)
     if (!arr.length) return
-    onChange([...files, ...arr])
-  }, [files, onChange])
+    onChange(prev => [...prev, ...arr])
+  }, [onChange])
 
   const removeFile = (i) => onChange(files.filter((_, idx) => idx !== i))
 
