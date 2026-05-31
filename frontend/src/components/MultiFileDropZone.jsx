@@ -36,8 +36,9 @@ function ImageThumb({ file, onRemove }) {
     >
       {src && <img src={src} alt={file.name} style={s.thumbImg} />}
       <button
+        type="button"
         style={{ ...s.thumbRemove, opacity: hover ? 1 : 0 }}
-        onClick={(e) => { e.stopPropagation(); onRemove() }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove() }}
       >✕</button>
       <div style={s.thumbName}>{file.name}</div>
     </div>
@@ -45,9 +46,11 @@ function ImageThumb({ file, onRemove }) {
 }
 
 export default function MultiFileDropZone({ files, onChange }) {
-  const inputRef = useRef(null)
+  // label htmlFor 연결용 고정 ID (컴포넌트 마운트 시 1회 생성)
+  const inputId = useRef(`mfd-${Math.random().toString(36).slice(2)}`).current
   const [dragging, setDragging] = useState(false)
 
+  // onChange(prev => ...) 함수형 업데이트로 stale closure 방지
   const addFiles = useCallback((newFiles) => {
     const arr = Array.from(newFiles)
     if (!arr.length) return
@@ -71,12 +74,17 @@ export default function MultiFileDropZone({ files, onChange }) {
   }, [addFiles])
 
   const onDragOver = (e) => { e.preventDefault(); setDragging(true) }
-  const onDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false) }
+  const onDragLeave = (e) => {
+    // relatedTarget이 null이면 브라우저 밖으로 나간 것
+    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
+      setDragging(false)
+    }
+  }
   const onDrop = (e) => { e.preventDefault(); setDragging(false); addFiles(e.dataTransfer.files) }
 
-  const hasFiles = files.length > 0
-  const images = files.filter(f => f.type.startsWith('image/'))
-  const docs = files.filter(f => !f.type.startsWith('image/'))
+  // 원본 인덱스를 유지하며 분류
+  const imageItems = files.map((f, i) => ({ f, i })).filter(({ f }) => f.type.startsWith('image/'))
+  const docItems   = files.map((f, i) => ({ f, i })).filter(({ f }) => !f.type.startsWith('image/'))
 
   return (
     <div
@@ -85,56 +93,62 @@ export default function MultiFileDropZone({ files, onChange }) {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
+      {/*
+        hidden input — label htmlFor로 열기 (JS .click() 보다 신뢰성 높음)
+        accept 없음 — */* 는 비표준으로 브라우저마다 다르게 동작
+      */}
       <input
-        ref={inputRef}
+        id={inputId}
         type="file"
         multiple
-        accept="*/*"
         style={{ display: 'none' }}
         onChange={(e) => { addFiles(e.target.files); e.target.value = '' }}
       />
 
-      {hasFiles ? (
+      {files.length > 0 ? (
         <>
           {/* 이미지 썸네일 그리드 */}
-          {images.length > 0 && (
+          {imageItems.length > 0 && (
             <div style={s.thumbGrid}>
-              {files.map((f, i) => f.type.startsWith('image/') && (
+              {imageItems.map(({ f, i }) => (
                 <ImageThumb key={i} file={f} onRemove={() => removeFile(i)} />
               ))}
             </div>
           )}
 
           {/* 문서 리스트 */}
-          {docs.length > 0 && (
-            <div style={{ marginTop: images.length ? 8 : 0 }}>
-              {files.map((f, i) => !f.type.startsWith('image/') && (
+          {docItems.length > 0 && (
+            <div style={{ marginTop: imageItems.length ? 8 : 0 }}>
+              {docItems.map(({ f, i }) => (
                 <div key={i} style={s.docItem}>
                   <span style={s.docIcon}>{fileIcon(f.type)}</span>
                   <span style={s.docName}>{f.name}</span>
                   <span style={s.docSize}>{formatSize(f.size)}</span>
-                  <button style={s.docRemove} onClick={() => removeFile(i)}>✕</button>
+                  <button
+                    type="button"
+                    style={s.docRemove}
+                    onClick={(e) => { e.stopPropagation(); removeFile(i) }}
+                  >✕</button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* 파일 추가 버튼 */}
-          <button
-            style={s.addMoreBtn}
-            onClick={() => inputRef.current?.click()}
-          >
+          {/* 파일 추가 — label htmlFor로 파일 피커 열기 */}
+          <label htmlFor={inputId} style={s.addMoreBtn}>
             + 파일 추가
-          </button>
+          </label>
         </>
       ) : (
-        /* 빈 상태 드롭존 */
-        <div style={s.emptyZone} onClick={() => inputRef.current?.click()}>
+        /* 빈 상태 — label htmlFor로 파일 피커 열기 */
+        <label htmlFor={inputId} style={s.emptyZone}>
           <div style={s.icon}>📎</div>
           <div style={s.mainText}>클릭하거나 파일을 드래그해서 올려주세요</div>
           <div style={s.subText}>이미지 · PDF · Excel · Word 등 여러 파일 가능</div>
-          <div style={s.subText}>이미지는 <kbd style={s.kbd}>Ctrl</kbd> + <kbd style={s.kbd}>V</kbd> 붙여넣기도 지원</div>
-        </div>
+          <div style={s.subText}>
+            이미지는 <kbd style={s.kbd}>Ctrl</kbd> + <kbd style={s.kbd}>V</kbd> 붙여넣기도 지원
+          </div>
+        </label>
       )}
     </div>
   )
@@ -153,6 +167,7 @@ const s = {
     background: '#f0f0ff',
   },
   emptyZone: {
+    display: 'block',
     padding: '20px 12px',
     textAlign: 'center',
     cursor: 'pointer',
@@ -241,6 +256,7 @@ const s = {
     flexShrink: 0,
   },
   addMoreBtn: {
+    display: 'block',
     marginTop: 10,
     width: '100%',
     padding: '8px 0',
@@ -251,5 +267,7 @@ const s = {
     fontSize: 13,
     fontWeight: 600,
     cursor: 'pointer',
+    textAlign: 'center',
+    boxSizing: 'border-box',
   },
 }
