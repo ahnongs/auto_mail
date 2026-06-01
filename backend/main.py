@@ -289,8 +289,9 @@ def _get_valid_credentials(uid: str) -> Credentials:
     if access_token and token_expiry_str:
         try:
             expiry = datetime.fromisoformat(token_expiry_str)
-            now = datetime.now(timezone.utc) if expiry.tzinfo else datetime.utcnow()
-            is_expired = expiry <= now + timedelta(minutes=5)
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            is_expired = expiry <= datetime.now(timezone.utc) + timedelta(minutes=5)
         except Exception:
             is_expired = True
 

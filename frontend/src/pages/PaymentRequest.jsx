@@ -5,6 +5,9 @@ import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import { ps } from '../styles/pageStyles'
+import { getMMDD } from '../utils/dateUtils'
+import { readFileAsBase64 } from '../utils/fileUtils'
 
 
 const TODAY = new Date().toISOString().slice(0, 10)
@@ -34,10 +37,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
   const previewTo = settings.testMode ? settings.testEmail : to
   const previewCc = settings.testMode ? '' : cc
 
-  const mmdd = useMemo(() => {
-    const d = new Date()
-    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-  }, [])
+  const mmdd = useMemo(() => getMMDD(), [])
 
   const subject = `(입금요청) ${form.vendor || 'OO'} 입금 요청의 건 ${mmdd}`
 
@@ -65,11 +65,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
     schedule(async () => {
       setSending(true)
       try {
-        const attachmentData = await new Promise(resolve => {
-          const reader = new FileReader()
-          reader.onload = e => resolve(e.target.result.split(',')[1])
-          reader.readAsDataURL(attachFile)
-        })
+        const attachmentData = await readFileAsBase64(attachFile)
         await sendMail({
           to, cc, subject, body,
           attachmentData,
@@ -205,30 +201,4 @@ export default function PaymentRequest({ user, settings, onBack }) {
   )
 }
 
-const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5' },
-  center: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
-  headerTitle: { fontSize: 16, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', fontSize: 14, color: '#667eea', cursor: 'pointer' },
-  layout: { display: 'flex', gap: 20, padding: 24, maxWidth: 1080, margin: '0 auto', alignItems: 'flex-start' },
-  formCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
-  previewCol: { width: 360, position: 'sticky', top: 24 },
-  card: { background: '#fff', borderRadius: 12, padding: 20 },
-  cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
-  sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
-  row: { display: 'flex', gap: 0 },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
-  textarea: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
-  optBtn: { padding: '8px 16px', border: '1.5px solid #e8e8e8', borderRadius: 8, background: '#fff', fontSize: 13, cursor: 'pointer' },
-  optSel: { border: '1.5px solid #667eea', background: '#f0f0ff', color: '#667eea', fontWeight: 600 },
-  error: { background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' },
-  btnPrimary: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
-  successCard: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
-  previewTitle: { fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8, paddingLeft: 2 },
-  previewCard: { background: '#fff', borderRadius: 12, padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  pRow: { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' },
-  pKey: { fontSize: 11, fontWeight: 600, color: '#bbb', minWidth: 52, paddingTop: 1 },
-  pVal: { fontSize: 13, color: '#333', flex: 1, wordBreak: 'break-all' },
-  preBody: { fontSize: 11.5, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 },
-}
+const s = ps

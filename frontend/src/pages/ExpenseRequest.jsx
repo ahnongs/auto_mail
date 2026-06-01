@@ -5,6 +5,7 @@ import { api, sendMail } from '../api'
 import MultiFileDropZone from '../components/MultiFileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import { getMMDD } from '../utils/dateUtils'
 
 
 const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
@@ -131,10 +132,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const previewTo = settings.testMode ? settings.testEmail : to
   const previewCc = settings.testMode ? '' : cc
 
-  const mmdd = (() => {
-    const d = new Date()
-    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
-  })()
+  const mmdd = getMMDD()
 
   const subject = `(지출결의서) ${settings.dept || form.dept || 'OOO파트'} ${user.name} 개인비용 사용의 건 ${mmdd}`
 
