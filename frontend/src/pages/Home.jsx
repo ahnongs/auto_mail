@@ -1,24 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getScheduledMails, cancelScheduledMail, getMailHistory } from '../api'
-
-const TYPE_META = {
-  vacation:  { label: '휴가신청',   icon: '🌴', color: '#22c55e' },
-  expense:   { label: '지출결의',   icon: '💳', color: '#667eea' },
-  payment:   { label: '입금요청',   icon: '💰', color: '#f59e0b' },
-  clockfix:  { label: '출퇴근변경', icon: '🕐', color: '#6366f1' },
-  interview: { label: '면담신청',   icon: '💬', color: '#ec4899' },
-  repair:    { label: '수리요청',   icon: '🔧', color: '#f97316' },
-  payment2:  { label: '온라인결제', icon: '🛒', color: '#14b8a6' },
-}
-
-function formatSentAt(iso) {
-  const d = new Date(iso)
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${mm}/${dd} ${hh}:${min}`
-}
+import { getScheduledMails, cancelScheduledMail } from '../api'
 
 function formatSendAt(iso) {
   const d = new Date(iso)
@@ -56,11 +37,8 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
 
   const [scheduledMails, setScheduledMails] = useState([])
-  const [sentHistory, setSentHistory] = useState([])
-  const [historyFilter, setHistoryFilter] = useState('all')
   useEffect(() => {
     getScheduledMails().then(r => setScheduledMails(r.data)).catch(() => {})
-    getMailHistory().then(r => setSentHistory(r.data)).catch(() => {})
   }, [])
   const [confirmCancelId, setConfirmCancelId] = useState(null)
   const handleCancelSchedule = (id) => setConfirmCancelId(id)
@@ -126,6 +104,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               <div style={{ position: 'absolute', top: 2, left: testMode ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
             </div>
           </div>
+          <button style={s.historyBtn} onClick={() => onNavigate('history')}>📋 이력</button>
           <button style={s.settingsBtn} onClick={() => { setDraft(settings); setShowSettings(true) }}>⚙️ 설정</button>
           <button style={s.logoutBtn} onClick={onLogout}>로그아웃</button>
         </div>
@@ -178,62 +157,6 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           </div>
         )}
 
-        {/* 발송 이력 */}
-        {sentHistory.length > 0 && (() => {
-          const filtered = historyFilter === 'all'
-            ? sentHistory
-            : sentHistory.filter(m => m.type === historyFilter)
-          const usedTypes = [...new Set(sentHistory.map(m => m.type).filter(Boolean))]
-          return (
-            <div style={s.historySection}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div style={s.scheduleHeader}>발송 이력</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button
-                    style={{ ...s.filterBtn, ...(historyFilter === 'all' ? s.filterBtnActive : {}) }}
-                    onClick={() => setHistoryFilter('all')}
-                  >전체</button>
-                  {usedTypes.map(t => {
-                    const meta = TYPE_META[t]
-                    if (!meta) return null
-                    return (
-                      <button
-                        key={t}
-                        style={{ ...s.filterBtn, ...(historyFilter === t ? { ...s.filterBtnActive, background: meta.color, borderColor: meta.color } : {}) }}
-                        onClick={() => setHistoryFilter(t)}
-                      >{meta.icon} {meta.label}</button>
-                    )
-                  })}
-                </div>
-              </div>
-              {filtered.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#bbb', fontSize: 13, padding: '16px 0' }}>해당 종류의 발송 이력이 없어요</div>
-              )}
-              {filtered.map((mail, i) => {
-                const meta = TYPE_META[mail.type] || { label: mail.type, icon: '📧', color: '#aaa' }
-                const gmailUrl = mail.message_id
-                  ? `https://mail.google.com/mail/u/0/#sent/${mail.message_id}`
-                  : null
-                return (
-                  <div key={i} style={s.historyItem}>
-                    <span style={{ ...s.historyBadge, background: meta.color + '18', color: meta.color }}>
-                      {meta.icon} {meta.label}
-                    </span>
-                    <div style={s.historyInfo}>
-                      <div style={s.historySubject}>{mail.subject}</div>
-                      <div style={s.historyMeta}>→ {mail.to} · {formatSentAt(mail.sent_at)}</div>
-                    </div>
-                    {gmailUrl && (
-                      <a href={gmailUrl} target="_blank" rel="noreferrer" style={s.historyLink}>
-                        Gmail ↗
-                      </a>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })()}
       </main>
 
       {/* 예약 취소 확인 모달 */}
@@ -465,6 +388,7 @@ const s = {
   headerRight: { display: 'flex', alignItems: 'center', gap: 10 },
   avatar: { width: 30, height: 30, borderRadius: '50%' },
   userName: { fontSize: 14, color: '#444' },
+  historyBtn: { padding: '6px 12px', border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff', fontSize: 13, color: '#667eea', cursor: 'pointer', fontWeight: 600 },
   settingsBtn: { padding: '6px 12px', border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff', fontSize: 13, color: '#444', cursor: 'pointer' },
   logoutBtn: { padding: '6px 12px', border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff', fontSize: 13, color: '#666', cursor: 'pointer' },
   main: { padding: '36px 28px', maxWidth: 900, margin: '0 auto' },
@@ -488,15 +412,6 @@ const s = {
   scheduleSubject: { fontSize: 13, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   scheduleTo: { fontSize: 11, color: '#aaa' },
   scheduleCancelBtn: { background: '#fff0f0', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 },
-  historySection: { marginTop: 24, background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  historyItem: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: '1px solid #f0f0f0' },
-  historyBadge: { fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0 },
-  historyInfo: { flex: 1, minWidth: 0 },
-  historySubject: { fontSize: 13, color: '#333', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  historyMeta: { fontSize: 11, color: '#aaa', marginTop: 2 },
-  historyLink: { fontSize: 11, color: '#667eea', textDecoration: 'none', fontWeight: 600, flexShrink: 0 },
-  filterBtn: { fontSize: 11, padding: '4px 10px', border: '1px solid #e0e0e0', borderRadius: 20, background: '#fff', color: '#666', cursor: 'pointer' },
-  filterBtnActive: { background: '#667eea', borderColor: '#667eea', color: '#fff', fontWeight: 600 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   modal: { background: '#fff', borderRadius: 16, padding: '28px 24px', width: 460, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' },
   modalTitle: { fontSize: 18, fontWeight: 700, marginBottom: 20 },

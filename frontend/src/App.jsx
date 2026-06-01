@@ -10,6 +10,7 @@ import InterviewRequest from './pages/InterviewRequest'
 import RepairRequest from './pages/RepairRequest'
 import OnlinePaymentRequest from './pages/OnlinePaymentRequest'
 import DesignRequest from './pages/DesignRequest'
+import HistoryPage from './pages/HistoryPage'
 
 
 const DEFAULT_SETTINGS = {
@@ -120,6 +121,7 @@ export default function App() {
   if (page === 'repair') return <RepairRequest {...pageProps} />
   if (page === 'payment2') return <OnlinePaymentRequest {...pageProps} />
   if (page === 'design') return <DesignRequest {...pageProps} />
+  if (page === 'history') return <HistoryPage onBack={goBack} />
 
   return (
     <Home
