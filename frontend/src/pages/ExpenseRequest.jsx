@@ -159,6 +159,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           attachments,
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
+          mailType: 'expense',
           signatureHtml: buildSignatureHtml(settings, user.email),
           sheetItems: items.map(it => ({
             date: it.date,

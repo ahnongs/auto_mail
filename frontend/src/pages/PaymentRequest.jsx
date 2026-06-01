@@ -75,6 +75,7 @@ export default function PaymentRequest({ user, settings, onBack }) {
           attachmentData,
           attachmentName: attachFile.name,
           attachmentType: attachFile.type,
+          mailType: 'payment',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),

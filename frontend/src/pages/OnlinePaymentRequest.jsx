@@ -65,6 +65,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack }) {
       try {
         await sendMail({
           to, cc, subject, body,
+          mailType: 'payment2',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),

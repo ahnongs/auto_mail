@@ -57,6 +57,7 @@ export default function InterviewRequest({ user, settings, onBack }) {
       try {
         await sendMail({
           to, cc, subject, body,
+          mailType: 'interview',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),

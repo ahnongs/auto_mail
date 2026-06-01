@@ -149,7 +149,8 @@ def get_me(session: str = Cookie(default=None)):
 
 
 _DATA_DIR = os.getenv("DATA_DIR", os.path.dirname(__file__))
-SETTINGS_FILE = os.path.join(_DATA_DIR, "user_settings.json")
+SETTINGS_FILE  = os.path.join(_DATA_DIR, "user_settings.json")
+SENT_FILE      = os.path.join(_DATA_DIR, "sent_mails.json")
 SCHEDULED_FILE = os.path.join(_DATA_DIR, "scheduled_emails.json")
 
 # ── 유저 설정 로드 (Supabase 우선, 파일 폴백) ──
@@ -238,6 +239,41 @@ def _get_uid(session: str):
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다.")
 
 
+def _add_sent_mail(item: dict):
+    if supabase:
+        try:
+            supabase.table("sent_mails").insert({"id": item["id"], "uid": item["uid"], "data": item}).execute()
+            return
+        except Exception as e:
+            print(f"[Supabase] sent_mails insert error: {e}")
+    # 파일 폴백
+    records = _load_sent_mails_file()
+    records.append(item)
+    with open(SENT_FILE, "w", encoding="utf-8") as f:
+        json.dump(records, f, ensure_ascii=False, indent=2)
+
+def _get_sent_mails(uid: str, limit: int = 50) -> list:
+    if supabase:
+        try:
+            res = supabase.table("sent_mails").select("data").eq("uid", uid).order("data->>sent_at", desc=True).limit(limit).execute()
+            return [r["data"] for r in (res.data or [])]
+        except Exception as e:
+            print(f"[Supabase] sent_mails select error: {e}")
+    records = _load_sent_mails_file()
+    user_records = [r for r in records if r.get("uid") == uid]
+    user_records.sort(key=lambda r: r.get("sent_at", ""), reverse=True)
+    return user_records[:limit]
+
+def _load_sent_mails_file() -> list:
+    if not os.path.exists(SENT_FILE):
+        return []
+    try:
+        with open(SENT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
 def _get_valid_credentials(uid: str) -> Credentials:
     """서버에 저장된 토큰을 조회하고, 만료됐으면 refresh하여 유효한 Credentials 반환."""
     user_data = _load_user(uid)
@@ -302,6 +338,14 @@ def save_settings(body: Dict[str, Any], session: str = Cookie(default=None)):
     existing.update(body)
     _save_user(uid, existing)
     return {"status": "ok"}
+
+
+@app.get("/mail/history")
+def get_mail_history(session: str = Cookie(default=None)):
+    if not session:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    uid = _get_uid(session)
+    return _get_sent_mails(uid)
 
 
 @app.get("/auth/logout")
@@ -428,6 +472,7 @@ class MailRequest(BaseModel):
     signatureText: str = ""
     signatureHtml: str = ""
     bodyHtml: str = ""
+    mailType: str = ""
     sheetItems: list = []
     sheetUserName: str = ""
     sheetDept: str = ""
@@ -565,6 +610,20 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             except Exception as sheet_err:
                 sheet_error = str(sheet_err)
                 print(f"[Sheets] 기록 실패: {sheet_err}")
+
+        # 발송 이력 기록
+        try:
+            _add_sent_mail({
+                "id": str(uuid.uuid4()),
+                "uid": uid,
+                "type": req.mailType,
+                "subject": req.subject,
+                "to": req.to,
+                "sent_at": datetime.now().isoformat(),
+                "message_id": result.get("id", ""),
+            })
+        except Exception as hist_err:
+            print(f"[History] 기록 실패: {hist_err}")
 
         return {"status": "ok", "message_id": result.get("id", ""), "sheet_error": sheet_error}
     except Exception as e:

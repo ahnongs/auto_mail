@@ -106,6 +106,7 @@ export default function ClockFixRequest({ user, settings, onBack }) {
           to, cc, subject,
           body: plainBody,
           bodyHtml,
+          mailType: 'clockfix',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),

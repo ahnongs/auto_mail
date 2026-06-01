@@ -61,6 +61,7 @@ export default function RepairRequest({ user, settings, onBack }) {
           attachmentData,
           attachmentName: attachFile.name,
           attachmentType: attachFile.type,
+          mailType: 'repair',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),

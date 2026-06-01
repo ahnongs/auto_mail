@@ -135,6 +135,7 @@ export default function VacationRequest({ user, settings, onBack }) {
           attachmentType,
           bodyImageData: isImage ? attachmentData : '',
           bodyImageType: isImage ? attachmentType : '',
+          mailType: 'vacation',
           signatureImageData: settings.logoImageData || '',
           signatureImageType: settings.logoImageType || '',
           signatureHtml: buildSignatureHtml(settings, user.email),
