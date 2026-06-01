@@ -14,3 +14,4 @@ export function sendMail(params, settings) {
 
 export const getScheduledMails = () => api.get('/mail/scheduled')
 export const cancelScheduledMail = (id) => api.delete(`/mail/scheduled/${id}`)
+export const getMailHistory = () => api.get('/mail/history')
