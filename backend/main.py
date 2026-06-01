@@ -289,8 +289,9 @@ def _get_valid_credentials(uid: str) -> Credentials:
     if access_token and token_expiry_str:
         try:
             expiry = datetime.fromisoformat(token_expiry_str)
-            now = datetime.now(timezone.utc) if expiry.tzinfo else datetime.utcnow()
-            is_expired = expiry <= now + timedelta(minutes=5)
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            is_expired = expiry <= datetime.now(timezone.utc) + timedelta(minutes=5)
         except Exception:
             is_expired = True
 
@@ -526,7 +527,7 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
             parts = [body_content]
             # 본문 이미지 (여러 장 지원)
             for i in range(len(all_body_images)):
-                parts.append(f'<br><img src="cid:body_img_{i}" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
+                parts.append(f'<br><img src="cid:body_img_{i}" style="width:600px;max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">')
             if req.signatureHtml:
                 parts.append(
                     '<br><hr style="border:none;border-top:1px solid #eee;margin:16px 0">'
@@ -552,13 +553,11 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                     bimg_data = base64.b64decode(img["data"])
                     bimg_part = MIMEImage(bimg_data, _subtype=img["type"].split("/")[-1])
                     bimg_part.add_header("Content-ID", f"<body_img_{i}>")
-                    bimg_part.add_header("Content-Disposition", "inline")
                     content.attach(bimg_part)
                 if has_logo:
                     img_data = base64.b64decode(req.signatureImageData)
                     img_part = MIMEImage(img_data, _subtype=req.signatureImageType.split("/")[-1])
                     img_part.add_header("Content-ID", "<signature_img>")
-                    img_part.add_header("Content-Disposition", "inline")
                     content.attach(img_part)
             else:
                 content = alt
@@ -786,7 +785,7 @@ async def do_send_scheduled():
                     fwd_img_data = item.get("fwd_body_image_data", "")
                     cover_html = esc(cover_body).replace("\n", "<br>")
                     orig_html  = esc(orig_plain)
-                    fwd_img_tag = '<br><img src="cid:fwd_body_img" style="max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">' if fwd_img_data else ''
+                    fwd_img_tag = '<br><img src="cid:fwd_body_img" style="width:600px;max-width:100%;border:1px solid #eee;border-radius:8px;margin-top:8px">' if fwd_img_data else ''
                     html_body = (
                         f'<div style="font-family:sans-serif;font-size:14px;line-height:1.7;white-space:pre-wrap">{cover_html}</div>'
                         f'<br><br>'
@@ -826,13 +825,11 @@ async def do_send_scheduled():
                         fi = base64.b64decode(fwd_img_data)
                         fi_part = MIMEImage(fi, _subtype=fwd_img_type.split("/")[-1])
                         fi_part.add_header("Content-ID", "<fwd_body_img>")
-                        fi_part.add_header("Content-Disposition", "inline")
                         msg.attach(fi_part)
                     if sig_img_data:
                         img_data = base64.b64decode(sig_img_data)
                         img_part = MIMEImage(img_data, _subtype=sig_img_type.split("/")[-1])
                         img_part.add_header("Content-ID", "<signature_img>")
-                        img_part.add_header("Content-Disposition", "inline")
                         msg.attach(img_part)
                 else:
                     msg = alt

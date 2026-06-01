@@ -5,6 +5,8 @@ import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import { ps } from '../styles/pageStyles'
+import { readFileWithMeta } from '../utils/fileUtils'
 
 
 const TYPES = [
@@ -117,22 +119,15 @@ export default function VacationRequest({ user, settings, onBack }) {
     schedule(async () => {
       setSending(true)
       try {
-        const { data: attachmentData, type: attachmentType } = await new Promise((resolve) => {
-          const reader = new FileReader()
-          reader.onload = (e) => {
-            const [meta, data] = e.target.result.split(',')
-            resolve({ data, type: meta.match(/:(.*?);/)[1] })
-          }
-          reader.readAsDataURL(attachFile)
-        })
+        const { data: attachmentData, type: attachmentType } = await readFileWithMeta(attachFile)
 
         const isImage = attachmentType.startsWith('image/')
 
         const sendRes = await sendMail({
           to, cc, subject, body,
-          attachmentData,
-          attachmentName: attachFile.name,
-          attachmentType,
+          attachmentData: '',
+          attachmentName: '',
+          attachmentType: '',
           bodyImageData: isImage ? attachmentData : '',
           bodyImageType: isImage ? attachmentType : '',
           mailType: 'vacation',
@@ -388,8 +383,8 @@ export default function VacationRequest({ user, settings, onBack }) {
             </div>
             {attachFile && (
               <div style={s.pRow}>
-                <span style={s.pKey}>첨부</span>
-                <span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span>
+                <span style={s.pKey}>이미지</span>
+                <span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📷 본문 삽입: {attachFile.name}</span>
               </div>
             )}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
@@ -402,34 +397,12 @@ export default function VacationRequest({ user, settings, onBack }) {
 }
 
 const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5' },
-  center: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
-  headerTitle: { fontSize: 16, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', fontSize: 14, color: '#667eea', cursor: 'pointer' },
-  layout: { display: 'flex', gap: 20, padding: 24, maxWidth: 1080, margin: '0 auto', alignItems: 'flex-start' },
-  formCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
-  previewCol: { width: 360, position: 'sticky', top: 24 },
-  card: { background: '#fff', borderRadius: 12, padding: 20 },
-  cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
-  sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
+  ...ps,
   required: { color: '#ef4444', fontWeight: 700 },
-  row: { display: 'flex', gap: 0 },
   hint: { fontSize: 12, color: '#667eea', marginTop: 10, fontWeight: 500 },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
-  textarea: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
   typeGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 },
   typeBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '12px 6px', border: '2px solid #e8e8e8', borderRadius: 10, background: '#fff', cursor: 'pointer' },
   typeSel: { border: '2px solid #667eea', background: '#f0f0ff' },
-  error: { background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' },
-  btnPrimary: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
-  successCard: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
-  previewTitle: { fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8, paddingLeft: 2 },
-  previewCard: { background: '#fff', borderRadius: 12, padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  pRow: { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' },
-  pKey: { fontSize: 11, fontWeight: 600, color: '#bbb', minWidth: 52, paddingTop: 1 },
-  pVal: { fontSize: 13, color: '#333', flex: 1, wordBreak: 'break-all' },
-  preBody: { fontSize: 11.5, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 },
   recipientRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 },
   recipientKey: { fontSize: 11, fontWeight: 600, color: '#aaa', minWidth: 52 },
   recipientVal: { fontSize: 13, color: '#555' },

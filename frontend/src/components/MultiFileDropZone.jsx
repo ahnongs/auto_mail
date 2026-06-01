@@ -93,10 +93,6 @@ export default function MultiFileDropZone({ files, onChange }) {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      {/*
-        hidden input — label htmlFor로 열기 (JS .click() 보다 신뢰성 높음)
-        accept 없음 — */* 는 비표준으로 브라우저마다 다르게 동작
-      */}
       <input
         id={inputId}
         type="file"
