@@ -39,7 +39,7 @@ export default function HistoryPage({ onBack }) {
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>📋 발송 이력</span>
+        <span style={s.headerTitle}>보낸 메일</span>
         <div style={{ width: 60 }} />
       </header>
 

@@ -104,7 +104,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
               <div style={{ position: 'absolute', top: 2, left: testMode ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
             </div>
           </div>
-          <button style={s.historyBtn} onClick={() => onNavigate('history')}>📋 이력</button>
+          <button style={s.historyBtn} onClick={() => onNavigate('history')}>보낸 메일</button>
           <button style={s.settingsBtn} onClick={() => { setDraft(settings); setShowSettings(true) }}>⚙️ 설정</button>
           <button style={s.logoutBtn} onClick={onLogout}>로그아웃</button>
         </div>
