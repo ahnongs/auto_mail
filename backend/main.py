@@ -700,12 +700,16 @@ def delete_scheduled(schedule_id: str, session: str = Cookie(default=None)):
 
 async def do_send_scheduled():
     from email.mime.image import MIMEImage
-    now = datetime.now()
+    import pytz
+    KST = pytz.timezone("Asia/Seoul")
+    now = datetime.now(KST)
     pending = _load_scheduled()
     remaining = []
     for item in pending:
         try:
             send_at = datetime.fromisoformat(item["send_at"])
+            if send_at.tzinfo is None:
+                send_at = KST.localize(send_at)
         except Exception:
             continue
 
