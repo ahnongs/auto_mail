@@ -21,7 +21,8 @@ const CATEGORY_GUIDE = [
   { name: '지급수수료', desc: '외주 업체 등 당사가 사용한 서비스에 대한 대가로 지불하는 비용 등' },
   { name: '광고선전비', desc: '당사 내부 마케팅(인하우스) 등을 위해 사용한 비용' },
 ]
-const emptyItem = () => ({ date: '', category: CATEGORIES[0], detail: '', amount: '', note: '' })
+const todayStr = () => new Date().toISOString().slice(0, 10)
+const emptyItem = () => ({ date: todayStr(), category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
 function buildBodyHtml({ user, settings, items, total, attachFiles }) {
   const borderOut  = '1px solid rgb(0,0,0)'
@@ -132,7 +133,14 @@ export default function ExpenseRequest({ user, settings, onBack }) {
   const previewTo = settings.testMode ? settings.testEmail : to
   const previewCc = settings.testMode ? '' : cc
 
-  const mmdd = getMMDD()
+  const mmdd = useMemo(() => {
+    const firstDate = items.find(it => it.date)?.date
+    if (firstDate) {
+      const [, m, d] = firstDate.split('-')
+      return `${m}/${d}`
+    }
+    return getMMDD()
+  }, [items])
 
   const subject = `(지출결의서) ${settings.dept || form.dept || 'OOO파트'} ${user.name} 개인비용 사용의 건 ${mmdd}`
 
