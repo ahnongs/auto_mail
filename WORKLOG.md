@@ -81,25 +81,18 @@
   - 발송 성공 시 초안 삭제
   - 각 메일 페이지별 고유 key 사용 (예: `draft_expense`, `draft_vacation`)
 
-### 🔲 #5 백엔드 코드 구조 리팩토링 (미시작)
-- 현재 `backend/main.py` 단일 파일이 너무 커짐 (~900줄)
-- 분리 방향:
+### ✅ #5 백엔드 코드 구조 리팩토링 (완료 — `61fc301`)
+- 874줄 `main.py` → 5개 파일로 분리:
   ```
   backend/
-    main.py          # FastAPI 앱 초기화 + CORS만
-    routers/
-      auth.py        # /auth/* 엔드포인트
-      mail.py        # /mail/* 엔드포인트
-      settings.py    # /settings/* 엔드포인트
-    services/
-      gmail.py       # Gmail API 연동
-      sheets.py      # Google Sheets 연동
-      token.py       # 토큰 관리 (_get_valid_credentials)
-    storage/
-      users.py       # _load_user, _save_user
-      scheduled.py   # 예약 발송 CRUD
-      sent.py        # 발송 이력 CRUD
+    __init__.py      # 패키지 초기화 (상대 import 지원)
+    main.py          # 앱 초기화 + CORS + 라우터 등록 (~35줄)
+    config.py        # 환경변수 + Supabase 초기화
+    storage.py       # 데이터 영속성 (유저/예약/발송이력)
+    auth.py          # /auth 라우터 + 토큰 헬퍼
+    mail.py          # /mail, /settings 라우터 + Gmail/Sheets/스케줄러
   ```
+- **주의**: Render 배포 시 실행 명령을 `uvicorn backend.main:app` (프로젝트 루트 기준)으로 설정해야 함
 
 ### 🔲 #6 테스트 코드 작성 (미시작)
 - **백엔드** (pytest):
@@ -119,7 +112,12 @@
 ```
 auto_mail/
 ├── backend/
-│   └── main.py                    # FastAPI 전체 (인증, 메일 발송, 이력, 설정)
+│   ├── __init__.py                # 패키지 초기화
+│   ├── main.py                    # 앱 초기화 + CORS + 라우터 등록
+│   ├── config.py                  # 환경변수 + Supabase 초기화
+│   ├── storage.py                 # 데이터 영속성 함수
+│   ├── auth.py                    # /auth 라우터
+│   └── mail.py                    # /mail, /settings 라우터
 ├── frontend/src/
 │   ├── App.jsx                    # 페이지 라우팅 (page state 방식)
 │   ├── api.js                     # axios 래퍼, sendMail, getMailHistory 등
@@ -190,6 +188,8 @@ DATA_DIR=          # 로컬 파일 저장 경로 (Supabase 없을 때)
 
 | 커밋 | 내용 |
 |------|------|
+| `61fc301` | backend 모듈 분리 (874줄 → 5개 파일) |
+| `55abc28` | 공통 유틸/스타일 추출 및 중복 코드 제거 |
 | `816d7db` | 발송 이력 홈에서 분리 → 별도 HistoryPage |
 | `5004f5f` | 발송 이력 기능 추가 (DB + API + UI) |
 | `c81ee08` | MultiFileDropZone 파일 피커/다중 추가 수정 |

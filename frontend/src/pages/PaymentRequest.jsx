@@ -37,7 +37,13 @@ export default function PaymentRequest({ user, settings, onBack }) {
   const previewTo = settings.testMode ? settings.testEmail : to
   const previewCc = settings.testMode ? '' : cc
 
-  const mmdd = useMemo(() => getMMDD(), [])
+  const mmdd = useMemo(() => {
+    if (form.purchaseDate) {
+      const [, m, d] = form.purchaseDate.split('-')
+      return `${m}/${d}`
+    }
+    return getMMDD()
+  }, [form.purchaseDate])
 
   const subject = `(입금요청) ${form.vendor || 'OO'} 입금 요청의 건 ${mmdd}`
 

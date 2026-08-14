@@ -58,7 +58,7 @@ function buildBodyHtml({ user, settings, form }) {
 export default function ClockFixRequest({ user, settings, onBack }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
-    targetDate: '',
+    targetDate: new Date().toISOString().slice(0, 10),
     reason: '',
     actualIn: '',
     actualOut: '',
@@ -76,7 +76,13 @@ export default function ClockFixRequest({ user, settings, onBack }) {
   const previewTo = settings.testMode ? settings.testEmail : to
   const previewCc = settings.testMode ? '' : cc
 
-  const mmdd = useMemo(() => getMMDD(), [])
+  const mmdd = useMemo(() => {
+    if (form.targetDate) {
+      const [, m, d] = form.targetDate.split('-')
+      return `${m}/${d}`
+    }
+    return getMMDD()
+  }, [form.targetDate])
 
   const subject = `(출퇴근변경) ${settings.dept || form.dept || '00파트'} ${user.name} 플렉스 출퇴근 변경신청의 건 ${mmdd}`
 
