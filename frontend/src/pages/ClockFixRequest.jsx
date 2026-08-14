@@ -1,4 +1,4 @@
-﻿import { buildSignatureHtml } from '../utils/signature'
+import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
