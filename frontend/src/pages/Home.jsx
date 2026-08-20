@@ -25,6 +25,10 @@ const formatPhone = (v) => {
 
 const trimPart = (v) => v.replace(/\s*파트\s*$/, '').trim()
 
+// 이메일 본문 내용에 들어가는 부서명에서만 "마케팅" 접두어 제거
+// (메일 서명은 sigPosition을 사용하므로 영향 없음)
+const deptForBody = (v) => v.replace(/^마케팅(?=기획디자인개발)/, '')
+
 const formatNameKo = (v) => {
   const n = v.replace(/\s/g, '')
   return n.split('').join(' ')
@@ -51,7 +55,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   const handleSave = () => {
     const normalized = {
       ...draft,
-      dept: draft.dept ? trimPart(draft.dept) + ' 파트' : '',
+      dept: draft.dept ? deptForBody(trimPart(draft.dept)) + ' 파트' : '',
       sigPosition: trimPart(draft.sigPosition || ''),
       managerEmail: draft.sigRole === '파트장' ? '' : draft.managerEmail,
     }
@@ -209,7 +213,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                 <select style={s.input} value={draft.sigPosition || ''} onChange={e => {
                   const v = e.target.value
                   set('sigPosition', v)
-                  set('dept', v ? v + ' 파트' : '')
+                  set('dept', v ? deptForBody(v) + ' 파트' : '')
                 }}>
                   <option value="">선택</option>
                   <option value="마케팅기획디자인개발">마케팅기획디자인개발 파트</option>
