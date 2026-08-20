@@ -24,7 +24,7 @@ const CATEGORY_GUIDE = [
 const todayStr = () => new Date().toISOString().slice(0, 10)
 const emptyItem = () => ({ date: todayStr(), category: CATEGORIES[0], detail: '', amount: '', note: '' })
 
-function buildBodyHtml({ user, settings, items, total, attachFiles }) {
+function buildBodyHtml({ user, settings, items, total }) {
   const borderOut  = '1px solid rgb(0,0,0)'
   const borderDash = '1px dashed rgb(0,0,0)'
   const bgHeader   = "background-color:rgb(243,243,243);font-family:'Noto Sans KR';font-weight:bold;text-align:center;"
@@ -100,13 +100,7 @@ function buildBodyHtml({ user, settings, items, total, attachFiles }) {
 
   html += `</table>`
 
-  // 첨부파일 목록 (영수증은 이미지 포함 모두 실제 첨부파일로 발송)
-  if (attachFiles.length > 0) {
-    html += `<p style="margin-top:16px;"><strong>&lt;첨부파일&gt;</strong></p>`
-    attachFiles.forEach(f => {
-      html += `<p style="margin:2px 0;font-size:13px;">📄 ${f.name}</p>`
-    })
-  }
+  // 영수증은 본문에 넣지 않고 실제 첨부파일로만 발송 (목록도 본문에 표시하지 않음)
 
   html += `</div>`
   return html
@@ -179,7 +173,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
         // 영수증은 이미지 포함 모두 실제 첨부파일로 발송 (본문 인라인 X)
         const attachments = processed.map(f => ({ data: f.data, name: f.name, type: f.type }))
-        const bodyHtml = buildBodyHtml({ user, settings, items, total, attachFiles })
+        const bodyHtml = buildBodyHtml({ user, settings, items, total })
 
         const mailRes = await sendMail({
           to, cc, subject,
