@@ -16,6 +16,35 @@ from .storage import load_user, load_scheduled, save_scheduled, add_scheduled, d
 import base64
 import uuid
 import re
+import mimetypes
+
+# 일부 시스템 mimetypes 에 없는 이미지 포맷 보강 (아이폰 HEIC 등)
+mimetypes.add_type("image/heic", ".heic")
+mimetypes.add_type("image/heif", ".heif")
+mimetypes.add_type("image/webp", ".webp")
+
+
+def _build_attachment_part(att):
+    """첨부파일 MIME 파트 생성.
+
+    Content-Type 을 정확히 1개만 설정한다. (기존 버그: MIMEBase 가 만든
+    application/octet-stream 헤더 위에 add_header 로 두 번째 Content-Type 을
+    덧붙여, 메일 클라이언트가 첫 헤더인 octet-stream 을 읽고 이미지를
+    정체불명 파일로 표시하는 문제가 있었음)
+    """
+    name = att.get("name") or "attachment"
+    # 브라우저가 타입을 못 잡으면(type='') 파일명 확장자로 추론
+    ctype = att.get("type") or mimetypes.guess_type(name)[0] or "application/octet-stream"
+    maintype, _, subtype = ctype.partition("/")
+    if not subtype:
+        maintype, subtype = "application", "octet-stream"
+
+    part = MIMEBase(maintype, subtype)
+    part.set_payload(base64.b64decode(att["data"]))
+    encoders.encode_base64(part)
+    # filename= 키워드로 넘겨 한글 등 비ASCII 파일명도 올바르게 인코딩
+    part.add_header("Content-Disposition", "attachment", filename=name)
+    return part
 
 router = APIRouter()
 
@@ -148,11 +177,7 @@ def build_mime_message(req: MailRequest) -> MIMEMultipart:
         msg = MIMEText(req.body, "plain", "utf-8")
 
     for att in all_attachments:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(base64.b64decode(att["data"]))
-        encoders.encode_base64(part)
-        part.add_header("Content-Disposition", f'attachment; filename="{att["name"]}"')
-        part.add_header("Content-Type", att.get("type") or "application/octet-stream")
+        part = _build_attachment_part(att)
         if not isinstance(msg, MIMEMultipart):
             outer = MIMEMultipart()
             outer.attach(msg)
