@@ -5,6 +5,9 @@ import { api, sendMail } from '../api'
 import MultiFileDropZone from '../components/MultiFileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import ErrorNotice from '../components/ErrorNotice'
+import SuccessCard from '../components/SuccessCard'
+import { ps, c } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
 
 
@@ -106,7 +109,7 @@ function buildBodyHtml({ user, settings, items, total }) {
   return html
 }
 
-export default function ExpenseRequest({ user, settings, onBack }) {
+export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({ dept: settings.dept || '' })
   const [items, setItems] = useState([emptyItem()])
   const [attachFiles, setAttachFiles] = useState([])
@@ -210,22 +213,13 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
-  if (sent) return (
-    <div style={s.center}>
-      <div style={s.successCard}>
-        <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-        <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{previewTo}에게 전송됐어요.</p>
-        <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
-      </div>
-    </div>
-  )
+  if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>💳 개인비용 지출결의서</span>
+        <span style={s.headerTitle}>개인비용 지출결의서</span>
         <div style={{ width: 60 }} />
       </header>
 
@@ -246,12 +240,12 @@ export default function ExpenseRequest({ user, settings, onBack }) {
               </div>
             </div>
             {(settings.bank || settings.account) ? (
-              <div style={{ marginTop: 10, padding: '8px 12px', background: '#f0f0ff', borderRadius: 8, fontSize: 12, color: '#667eea' }}>
-                💳 {settings.bank} {settings.account} ({settings.accountHolder}) — 설정에서 변경 가능
+              <div style={{ marginTop: 10, padding: '8px 12px', background: c.accentSoft, borderRadius: 6, fontSize: 12, color: c.accent }}>
+                {settings.bank} {settings.account} ({settings.accountHolder}) — 설정에서 변경 가능
               </div>
             ) : (
-              <div style={{ marginTop: 10, padding: '8px 12px', background: '#fff8e1', borderRadius: 8, fontSize: 12, color: '#92400e' }}>
-                ⚠️ 계좌 정보가 없어요. 설정(⚙️)에서 먼저 입력해주세요.
+              <div style={{ marginTop: 10, padding: '8px 12px', background: c.warnBg, borderRadius: 6, fontSize: 12, color: c.warnInk }}>
+                계좌 정보가 없어요. 설정에서 먼저 입력해주세요.
               </div>
             )}
           </div>
@@ -263,9 +257,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
               <button style={s.addBtn} onClick={addItem}>+ 항목 추가</button>
             </div>
             {items.map((it, i) => (
-              <div key={i} style={{ background: '#f8f8ff', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+              <div key={i} style={{ background: c.surface2, border: `1px solid ${c.line}`, borderRadius: 8, padding: 14, marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#667eea' }}>항목 {i + 1}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: c.accent }}>항목 {i + 1}</span>
                   {items.length > 1 && <button style={s.removeBtn} onClick={() => removeItem(i)}>✕</button>}
                 </div>
                 <div style={s.row} className="r-date-row">
@@ -294,17 +288,17 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                 </div>
               </div>
             ))}
-            <div style={{ textAlign: 'right', fontSize: 15, fontWeight: 700, color: '#333', marginTop: 4, paddingRight: 4 }}>
+            <div style={{ textAlign: 'right', fontSize: 15, fontWeight: 700, color: c.inkStrong, marginTop: 4, paddingRight: 4 }}>
               합계: ₩{total.toLocaleString()}
             </div>
           </div>
 
           {/* 영수증 첨부 */}
-          <div style={{ ...s.card, ...(error.includes('영수증') ? { border: '1.5px solid #fca5a5' } : {}) }}>
+          <div style={{ ...s.card, ...(error.includes('영수증') ? { border: `1px solid ${c.errLine}` } : {}) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={s.cardTitle}>📎 영수증 첨부 <span style={{ color: '#ef4444' }}>*</span></div>
+              <div style={s.cardTitle}>영수증 첨부 <span style={{ color: '#ef4444' }}>*</span></div>
               {attachFiles.length > 0 && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#667eea', background: '#f0f0ff', borderRadius: 20, padding: '2px 10px' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: c.accent, background: c.accentSoft, borderRadius: 20, padding: '2px 10px' }}>
                   {attachFiles.length}개
                 </span>
               )}
@@ -312,9 +306,9 @@ export default function ExpenseRequest({ user, settings, onBack }) {
             <MultiFileDropZone files={attachFiles} onChange={setAttachFiles} />
           </div>
 
-          {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
-            {sending ? '발송 중...' : '📤 메일 발송하기'}
+          <ErrorNotice message={error} />
+          <button style={s.btnSend} onClick={handleSend} disabled={sending}>
+            {sending ? '발송 중...' : '메일 발송하기'}
           </button>
         </div>
 
@@ -322,16 +316,16 @@ export default function ExpenseRequest({ user, settings, onBack }) {
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
-            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
+            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: c.muted, fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
             {attachFiles.length > 0 && (
               <div style={s.pRow}>
                 <span style={s.pKey}>첨부</span>
                 <span style={{ ...s.pVal, fontSize: 12 }}>
                   {attachFiles.map((f, i) => (
-                    <span key={i} style={{ display: 'block', color: '#667eea' }}>📎 {f.name}</span>
+                    <span key={i} style={{ display: 'block', color: c.accent }}>{f.name}</span>
                   ))}
                 </span>
               </div>
@@ -343,8 +337,8 @@ export default function ExpenseRequest({ user, settings, onBack }) {
           {/* 지출 구분 기준 */}
           <div style={{ marginTop: 16 }}>
             <div style={s.previewTitle}>지출 구분 기준</div>
-            <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <div style={{ background: '#667eea', color: '#fff', textAlign: 'center', padding: '8px 0', fontSize: 13, fontWeight: 700 }}>
+            <div style={{ background: c.surface, border: `1px solid ${c.line}`, borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ background: c.accent, color: '#fff', textAlign: 'center', padding: '8px 0', fontSize: 13, fontWeight: 700 }}>
                 &lt;지출 구분 기준&gt;
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -356,7 +350,7 @@ export default function ExpenseRequest({ user, settings, onBack }) {
                 </thead>
                 <tbody>
                   {CATEGORY_GUIDE.map((row, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f8f8ff' }}>
+                    <tr key={i} style={{ background: i % 2 === 0 ? c.surface : c.surface2 }}>
                       <td style={s.gTdName}>{row.name}</td>
                       <td style={s.gTdDesc}>{row.desc}</td>
                     </tr>
@@ -372,31 +366,11 @@ export default function ExpenseRequest({ user, settings, onBack }) {
 }
 
 const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5' },
-  center: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
-  headerTitle: { fontSize: 16, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', fontSize: 14, color: '#667eea', cursor: 'pointer' },
-  layout: { display: 'flex', gap: 20, padding: 24, maxWidth: 1080, margin: '0 auto', alignItems: 'flex-start' },
-  formCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
-  previewCol: { width: 360, position: 'sticky', top: 24 },
-  card: { background: '#fff', borderRadius: 12, padding: 20 },
-  cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 0 },
-  sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
-  row: { display: 'flex', gap: 0 },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
-  addBtn: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' },
-  removeBtn: { background: 'none', border: '1px solid #ddd', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer', color: '#999' },
-  error: { background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' },
-  btnPrimary: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
-  successCard: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
-  previewTitle: { fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8, paddingLeft: 2 },
-  previewCard: { background: '#fff', borderRadius: 12, padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  pRow: { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' },
-  pKey: { fontSize: 11, fontWeight: 600, color: '#bbb', minWidth: 52, paddingTop: 1 },
-  pVal: { fontSize: 13, color: '#333', flex: 1, wordBreak: 'break-all' },
-  preBody: { fontSize: 11.5, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 },
-  gTh: { background: '#eef0ff', color: '#444', fontSize: 11, fontWeight: 700, padding: '7px 10px', border: '1px solid #dde0ff', textAlign: 'center' },
-  gTdName: { fontSize: 11, fontWeight: 700, color: '#333', padding: '6px 10px', border: '1px solid #eee', whiteSpace: 'pre-line', verticalAlign: 'middle', minWidth: 80 },
-  gTdDesc: { fontSize: 11, color: '#555', padding: '6px 10px', border: '1px solid #eee', lineHeight: 1.6, verticalAlign: 'middle' },
+  ...ps,
+  cardTitle: { ...ps.cardTitle, marginBottom: 0 },
+  addBtn: { background: c.accent, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' },
+  removeBtn: { background: 'none', border: `1px solid ${c.line}`, borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer', color: c.muted },
+  gTh: { background: c.accentSoft, color: c.ink, fontSize: 11, fontWeight: 700, padding: '7px 10px', border: `1px solid ${c.accentLine}`, textAlign: 'center' },
+  gTdName: { fontSize: 11, fontWeight: 700, color: c.ink, padding: '6px 10px', border: `1px solid ${c.line}`, whiteSpace: 'pre-line', verticalAlign: 'middle', minWidth: 80 },
+  gTdDesc: { fontSize: 11, color: c.muted, padding: '6px 10px', border: `1px solid ${c.line}`, lineHeight: 1.6, verticalAlign: 'middle' },
 }

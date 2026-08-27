@@ -104,14 +104,14 @@ export default function App() {
   const handleLogout = () => { window.location.href = `${API_BASE}/auth/logout` }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #ddd', borderTop: '3px solid #667eea', borderRadius: '50%' }} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F6F3' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid #EAEAEA', borderTop: '3px solid #667eea', borderRadius: '50%' }} />
     </div>
   )
 
   if (!user) return <Login />
 
-  const pageProps = { user, settings: { ...settings, testMode, testEmail }, onBack: goBack }
+  const pageProps = { user, settings: { ...settings, testMode, testEmail }, onBack: goBack, onNavigate: navigate }
 
   if (page === 'vacation') return <VacationRequest {...pageProps} />
   if (page === 'payment') return <PaymentRequest {...pageProps} />

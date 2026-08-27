@@ -5,17 +5,19 @@ import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
-import { ps } from '../styles/pageStyles'
+import ErrorNotice from '../components/ErrorNotice'
+import SuccessCard from '../components/SuccessCard'
+import { ps, c } from '../styles/pageStyles'
 import { readFileWithMeta } from '../utils/fileUtils'
 
 
 const TYPES = [
-  { id: '연차',      label: '연차',     icon: '🌴', multiDay: true  },
-  { id: '반차(오전)', label: '오전 반차', icon: '🌅', multiDay: false },
-  { id: '반차(오후)', label: '오후 반차', icon: '🌇', multiDay: false },
-  { id: '반반차',    label: '반반차',   icon: '⏱️', multiDay: false },
-  { id: '시간차',    label: '시간차',   icon: '🕐', multiDay: false },
-  { id: '대체휴무',  label: '대체휴무', icon: '🔄', multiDay: false },
+  { id: '연차',      label: '연차',     multiDay: true  },
+  { id: '반차(오전)', label: '오전 반차', multiDay: false },
+  { id: '반차(오후)', label: '오후 반차', multiDay: false },
+  { id: '반반차',    label: '반반차',   multiDay: false },
+  { id: '시간차',    label: '시간차',   multiDay: false },
+  { id: '대체휴무',  label: '대체휴무', multiDay: false },
 ]
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -31,7 +33,7 @@ function dayCount(start, end) {
   return Math.round((new Date(end) - new Date(start)) / 86400000) + 1
 }
 
-export default function VacationRequest({ user, settings, onBack }) {
+export default function VacationRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
     startDate: '', endDate: '',
@@ -180,29 +182,23 @@ export default function VacationRequest({ user, settings, onBack }) {
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
   if (sent) return (
-    <div style={s.center}>
-      <div style={s.successCard}>
-        <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-        <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: scheduleResult ? 12 : 24 }}>{previewTo}에게 전송됐어요.</p>
-        {scheduleResult && (
-          <div style={{ background: '#f0fff4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: '#15803d', textAlign: 'left' }}>
-            📅 사전 알림 예약 완료<br />
-            <span style={{ fontSize: 12, color: '#166534' }}>
-              {dayBefore} {scheduleOpt.time} → {settings.testMode ? settings.testEmail : R.leave}로 자동 발송 예정
-            </span>
-          </div>
-        )}
-        <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
-      </div>
-    </div>
+    <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate}>
+      {scheduleResult && (
+        <div style={{ background: c.okBg, border: `1px solid ${c.okLine}`, borderRadius: 8, padding: '12px 16px', marginBottom: 24, fontSize: 13, color: c.okInk, textAlign: 'left' }}>
+          사전 알림 예약 완료<br />
+          <span style={{ fontSize: 12, color: c.okInk }}>
+            {dayBefore} {scheduleOpt.time} → {settings.testMode ? settings.testEmail : R.leave}로 자동 발송 예정
+          </span>
+        </div>
+      )}
+    </SuccessCard>
   )
 
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>🌴 휴가신청</span>
+        <span style={s.headerTitle}>휴가신청</span>
         <div style={{ width: 60 }} />
       </header>
 
@@ -217,8 +213,7 @@ export default function VacationRequest({ user, settings, onBack }) {
                 <button key={t.id}
                   style={{ ...s.typeBtn, ...(form.type === t.id ? s.typeSel : {}) }}
                   onClick={() => set('type', t.id)}>
-                  <span style={{ fontSize: 22 }}>{t.icon}</span>
-                  <span style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>{t.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{t.label}</span>
                 </button>
               ))}
             </div>
@@ -244,7 +239,7 @@ export default function VacationRequest({ user, settings, onBack }) {
               )}
             </div>
 
-            {form.startDate && <div style={{ ...s.hint, marginTop: 10 }}>📅 {periodText}</div>}
+            {form.startDate && <div style={{ ...s.hint, marginTop: 10 }}>{periodText}</div>}
           </div>
 
           {/* 신청자 */}
@@ -265,15 +260,15 @@ export default function VacationRequest({ user, settings, onBack }) {
           </div>
 
           {/* 수신자 */}
-          <div style={{ ...s.card, background: settings.testMode ? '#fff9ec' : '#f8f8ff', border: `1.5px solid ${settings.testMode ? '#fbbf24' : '#e0e0ff'}` }}>
-            <div style={s.cardTitle}>수신자 <span style={{ fontSize: 11, color: '#aaa', fontWeight: 400 }}>설정에서 관리</span></div>
+          <div style={{ ...s.card, background: settings.testMode ? c.warnBg : c.surface2, border: `1px solid ${settings.testMode ? c.warnLine : c.line}` }}>
+            <div style={s.cardTitle}>수신자 <span style={{ fontSize: 11, color: c.faint, fontWeight: 400 }}>설정에서 관리</span></div>
             {settings.testMode && (
-              <div style={{ fontSize: 11, color: '#92400e', marginBottom: 6 }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>
+              <div style={{ fontSize: 11, color: c.warnInk, marginBottom: 6 }}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>
             )}
             <div style={s.recipientRow}>
               <span style={s.recipientKey}>받는사람</span>
               <span style={{ ...s.recipientVal, ...(settings.testMode ? { color: '#b45309', fontWeight: 600 } : {}) }}>
-                {previewTo || <span style={{ color: '#f59e0b' }}>⚠️ 설정 필요</span>}
+                {previewTo || <span style={{ color: '#f59e0b' }}>설정 필요</span>}
               </span>
             </div>
             <div style={s.recipientRow}>
@@ -298,8 +293,8 @@ export default function VacationRequest({ user, settings, onBack }) {
 
           {/* 대체휴무 */}
           {form.type === '대체휴무' && (
-            <div style={{ ...s.card, background: '#fffbeb', border: '1.5px solid #fcd34d' }}>
-              <div style={s.cardTitle}>📋 대체휴무 추가 정보</div>
+            <div style={{ ...s.card, background: c.warnBg, border: `1px solid ${c.warnLine}` }}>
+              <div style={s.cardTitle}>대체휴무 추가 정보</div>
               <div style={s.sublabel}>휴일 근무 발생일</div>
               <input type="date" style={s.input} value={form.overtimeDate}
                 onChange={e => set('overtimeDate', e.target.value)} />
@@ -310,23 +305,23 @@ export default function VacationRequest({ user, settings, onBack }) {
           )}
 
           {/* 플렉스 캡처 — 필수 */}
-          <div style={{ ...s.card, ...(error.includes('캡처') ? { border: '1.5px solid #fca5a5' } : {}) }}>
+          <div style={{ ...s.card, ...(error.includes('캡처') ? { border: `1px solid ${c.errLine}` } : {}) }}>
             <div style={s.cardTitle}>
-              📎 플렉스 휴가 신청 캡처
+              플렉스 휴가 신청 캡처
               <span style={{ ...s.required, marginLeft: 4 }}>*</span>
             </div>
-            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: c.faint, marginBottom: 10 }}>
               플렉스 앱 → 휴가 → 예정된 휴가 화면을 캡처해서 첨부해주세요.
             </div>
             <FileDropZone file={attachFile} onChange={setAttachFile} />
           </div>
 
           {/* 하루 전날 사전 알림 예약 */}
-          <div style={{ ...s.card, background: '#f0fff4', border: '1.5px solid #bbf7d0' }}>
+          <div style={{ ...s.card, background: c.okBg, border: `1px solid ${c.okLine}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: scheduleOpt.enabled ? 12 : 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>📅 하루 전날 사전 알림 예약</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: c.okInk }}>하루 전날 사전 알림 예약</div>
               <button
-                style={{ background: scheduleOpt.enabled ? '#22c55e' : '#d1d5db', color: '#fff', border: 'none', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: scheduleOpt.enabled ? c.okInk : c.lineStrong, color: '#fff', border: 'none', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
                 onClick={() => setScheduleOpt(o => ({ ...o, enabled: !o.enabled }))}>
                 {scheduleOpt.enabled ? 'ON' : 'OFF'}
               </button>
@@ -344,23 +339,22 @@ export default function VacationRequest({ user, settings, onBack }) {
                   })}
                 </select>
                 {dayBefore ? (
-                  <div style={{ marginTop: 8, fontSize: 12, color: '#15803d', fontWeight: 500 }}>
-                    📬 {dayBefore} {scheduleOpt.time}에 {settings.testMode ? settings.testEmail : R.leave}로 자동 발송
+                  <div style={{ marginTop: 8, fontSize: 12, color: c.okInk, fontWeight: 500 }}>
+                    {dayBefore} {scheduleOpt.time}에 {settings.testMode ? settings.testEmail : R.leave}로 자동 발송
                   </div>
                 ) : (
                   <div style={{ marginTop: 8, fontSize: 12, color: '#f59e0b' }}>
-                    ⚠️ 휴가 날짜를 먼저 선택해주세요.
+                    휴가 날짜를 먼저 선택해주세요.
                   </div>
                 )}
               </>
             )}
           </div>
 
-          {error && <div style={s.error}>⚠️ {error}</div>}
+          <ErrorNotice message={error} />
 
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }}
-            onClick={handleSend} disabled={sending}>
-            {sending ? '발송 중...' : '📤 메일 발송하기'}
+          <button style={s.btnSend} onClick={handleSend} disabled={sending}>
+            {sending ? '발송 중...' : '메일 발송하기'}
           </button>
         </div>
 
@@ -368,7 +362,7 @@ export default function VacationRequest({ user, settings, onBack }) {
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}>
               <span style={s.pKey}>받는사람</span>
               <span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo || <span style={{ color: '#f59e0b' }}>설정 필요</span>}</span>
@@ -384,7 +378,7 @@ export default function VacationRequest({ user, settings, onBack }) {
             {attachFile && (
               <div style={s.pRow}>
                 <span style={s.pKey}>이미지</span>
-                <span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📷 본문 삽입: {attachFile.name}</span>
+                <span style={{ ...s.pVal, color: c.accent, fontSize: 12 }}>본문 삽입: {attachFile.name}</span>
               </div>
             )}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
@@ -399,11 +393,11 @@ export default function VacationRequest({ user, settings, onBack }) {
 const s = {
   ...ps,
   required: { color: '#ef4444', fontWeight: 700 },
-  hint: { fontSize: 12, color: '#667eea', marginTop: 10, fontWeight: 500 },
+  hint: { fontSize: 12, color: c.accent, marginTop: 10, fontWeight: 500 },
   typeGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 },
-  typeBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '12px 6px', border: '2px solid #e8e8e8', borderRadius: 10, background: '#fff', cursor: 'pointer' },
-  typeSel: { border: '2px solid #667eea', background: '#f0f0ff' },
+  typeBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 6px', border: `1px solid ${c.line}`, borderRadius: 6, background: c.surface, color: c.muted, cursor: 'pointer' },
+  typeSel: { border: `1px solid ${c.accent}`, background: c.accentSoft, color: c.accent },
   recipientRow: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 },
-  recipientKey: { fontSize: 11, fontWeight: 600, color: '#aaa', minWidth: 52 },
-  recipientVal: { fontSize: 13, color: '#555' },
+  recipientKey: { fontSize: 11, fontWeight: 600, color: c.faint, minWidth: 52 },
+  recipientVal: { fontSize: 13, color: c.ink },
 }

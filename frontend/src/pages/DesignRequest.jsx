@@ -5,12 +5,15 @@ import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import ErrorNotice from '../components/ErrorNotice'
+import SuccessCard from '../components/SuccessCard'
+import { ps, c } from '../styles/pageStyles'
 
 
 const URGENCY = ['일반', '긴급']
 const REQ_TYPE = ['계약 포함', '서비스', '비용 청구', '내부 디자인']
 
-export default function DesignRequest({ user, settings, onBack }) {
+export default function DesignRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
     client: '',
@@ -95,22 +98,13 @@ export default function DesignRequest({ user, settings, onBack }) {
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
-  if (sent) return (
-    <div style={s.center}>
-      <div style={s.successCard}>
-        <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-        <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{previewTo}에게 전송됐어요.</p>
-        <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
-      </div>
-    </div>
-  )
+  if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>🎨 디자인요청</span>
+        <span style={s.headerTitle}>디자인요청</span>
         <div style={{ width: 60 }} />
       </header>
 
@@ -145,8 +139,8 @@ export default function DesignRequest({ user, settings, onBack }) {
             <div style={s.sublabel}>업무 긴급도</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               {URGENCY.map(v => (
-                <button key={v} style={{ ...s.optBtn, ...(form.urgency === v ? s.optSel : {}), ...(v === '긴급' && form.urgency === v ? { borderColor: '#ef4444', background: '#fff0f0', color: '#ef4444' } : {}) }}
-                  onClick={() => set('urgency', v)}>{v === '긴급' ? '🔴 긴급' : '🟢 일반'}</button>
+                <button key={v} style={{ ...s.optBtn, ...(form.urgency === v ? s.optSel : {}), ...(v === '긴급' && form.urgency === v ? { borderColor: '#dc2626', background: '#FDEBEC', color: '#9F2F2D' } : {}) }}
+                  onClick={() => set('urgency', v)}>{v}</button>
               ))}
             </div>
             <div style={s.sublabel}>요청 구분</div>
@@ -163,24 +157,24 @@ export default function DesignRequest({ user, settings, onBack }) {
           </div>
 
           <div style={s.card}>
-            <div style={s.cardTitle}>📎 기획서 첨부 <span style={{ color: '#bbb', fontSize: 12, fontWeight: 400 }}>선택</span></div>
+            <div style={s.cardTitle}>기획서 첨부 <span style={{ color: c.faint, fontSize: 12, fontWeight: 400 }}>선택</span></div>
             <FileDropZone file={attachFile} onChange={setAttachFile} />
           </div>
 
-          {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
-            {sending ? '발송 중...' : '📤 메일 발송하기'}
+          <ErrorNotice message={error} />
+          <button style={s.btnSend} onClick={handleSend} disabled={sending}>
+            {sending ? '발송 중...' : '메일 발송하기'}
           </button>
         </div>
 
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
-            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
+            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: c.muted, fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
-            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
+            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: c.accent, fontSize: 12 }}>{attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
             <pre style={s.preBody}>{body}</pre>
           </div>
@@ -190,30 +184,4 @@ export default function DesignRequest({ user, settings, onBack }) {
   )
 }
 
-const s = {
-  page: { minHeight: '100vh', background: '#f5f5f5' },
-  center: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' },
-  headerTitle: { fontSize: 16, fontWeight: 700 },
-  backBtn: { background: 'none', border: 'none', fontSize: 14, color: '#667eea', cursor: 'pointer' },
-  layout: { display: 'flex', gap: 20, padding: 24, maxWidth: 1080, margin: '0 auto', alignItems: 'flex-start' },
-  formCol: { flex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
-  previewCol: { width: 360, position: 'sticky', top: 24 },
-  card: { background: '#fff', borderRadius: 12, padding: 20 },
-  cardTitle: { fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 12 },
-  sublabel: { fontSize: 12, color: '#888', marginBottom: 6 },
-  row: { display: 'flex', gap: 0 },
-  input: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' },
-  textarea: { width: '100%', padding: '10px 12px', border: '1.5px solid #e8e8e8', borderRadius: 8, fontSize: 14, outline: 'none', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
-  optBtn: { padding: '8px 14px', border: '1.5px solid #e8e8e8', borderRadius: 8, background: '#fff', fontSize: 12, cursor: 'pointer' },
-  optSel: { border: '1.5px solid #667eea', background: '#f0f0ff', color: '#667eea', fontWeight: 600 },
-  error: { background: '#fff0f0', border: '1px solid #fca5a5', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626' },
-  btnPrimary: { background: '#667eea', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
-  successCard: { background: '#fff', borderRadius: 16, padding: '48px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' },
-  previewTitle: { fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 8, paddingLeft: 2 },
-  previewCard: { background: '#fff', borderRadius: 12, padding: 18, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
-  pRow: { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' },
-  pKey: { fontSize: 11, fontWeight: 600, color: '#bbb', minWidth: 52, paddingTop: 1 },
-  pVal: { fontSize: 13, color: '#333', flex: 1, wordBreak: 'break-all' },
-  preBody: { fontSize: 11.5, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 },
-}
+const s = ps

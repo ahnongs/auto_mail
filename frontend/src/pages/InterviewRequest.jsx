@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import ErrorNotice from '../components/ErrorNotice'
+import SuccessCard from '../components/SuccessCard'
 import { ps } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
 
@@ -11,7 +13,7 @@ import { getMMDD } from '../utils/dateUtils'
 const TARGETS = ['파트장', '본부장', '경영지원 파트장']
 const PURPOSES = ['업무 분장', '사내 고충', '개인 상담', '기타']
 
-export default function InterviewRequest({ user, settings, onBack }) {
+export default function InterviewRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
     target: TARGETS[0],
@@ -72,22 +74,13 @@ export default function InterviewRequest({ user, settings, onBack }) {
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
-  if (sent) return (
-    <div style={s.center}>
-      <div style={s.successCard}>
-        <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-        <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{previewTo}에게 전송됐어요.</p>
-        <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
-      </div>
-    </div>
-  )
+  if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>💬 면담신청</span>
+        <span style={s.headerTitle}>면담신청</span>
         <div style={{ width: 60 }} />
       </header>
 
@@ -130,16 +123,16 @@ export default function InterviewRequest({ user, settings, onBack }) {
             <textarea style={s.textarea} rows={5} placeholder="면담에서 논의하고 싶은 내용을 작성해주세요" value={form.content} onChange={e => set('content', e.target.value)} />
           </div>
 
-          {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
-            {sending ? '발송 중...' : '📤 메일 발송하기'}
+          <ErrorNotice message={error} />
+          <button style={s.btnSend} onClick={handleSend} disabled={sending}>
+            {sending ? '발송 중...' : '메일 발송하기'}
           </button>
         </div>
 
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
             <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>

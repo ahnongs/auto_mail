@@ -5,14 +5,16 @@ import { api, sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
-import { ps } from '../styles/pageStyles'
+import ErrorNotice from '../components/ErrorNotice'
+import SuccessCard from '../components/SuccessCard'
+import { ps, c } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
 import { readFileAsBase64 } from '../utils/fileUtils'
 
 
 const TODAY = new Date().toISOString().slice(0, 10)
 
-export default function PaymentRequest({ user, settings, onBack }) {
+export default function PaymentRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
     purchaseDate: TODAY,
@@ -93,22 +95,13 @@ export default function PaymentRequest({ user, settings, onBack }) {
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
 
-  if (sent) return (
-    <div style={s.center}>
-      <div style={s.successCard}>
-        <div style={{ fontSize: 56, marginBottom: 12 }}>✅</div>
-        <h2 style={{ marginBottom: 6 }}>메일 발송 완료!</h2>
-        <p style={{ color: '#888', marginBottom: 24 }}>{previewTo}에게 전송됐어요.</p>
-        <button style={s.btnPrimary} onClick={onBack}>홈으로 돌아가기</button>
-      </div>
-    </div>
-  )
+  if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
         <button style={s.backBtn} onClick={onBack}>← 뒤로</button>
-        <span style={s.headerTitle}>💰 입금요청</span>
+        <span style={s.headerTitle}>입금요청</span>
         <div style={{ width: 60 }} />
       </header>
 
@@ -179,25 +172,25 @@ export default function PaymentRequest({ user, settings, onBack }) {
             <textarea style={s.textarea} rows={2} placeholder="없음" value={form.notes} onChange={e => set('notes', e.target.value)} />
           </div>
 
-          <div style={{ ...s.card, ...(error.includes('첨부') ? { border: '1.5px solid #fca5a5' } : {}) }}>
-            <div style={s.cardTitle}>📎 거래내역서 / 명세서 <span style={{ color: '#ef4444' }}>*</span></div>
+          <div style={{ ...s.card, ...(error.includes('첨부') ? { border: `1px solid ${c.errLine}` } : {}) }}>
+            <div style={s.cardTitle}>거래내역서 / 명세서 <span style={{ color: '#ef4444' }}>*</span></div>
             <FileDropZone file={attachFile} onChange={setAttachFile} />
           </div>
 
-          {error && <div style={s.error}>⚠️ {error}</div>}
-          <button style={{ ...s.btnPrimary, padding: '14px', fontSize: 15, borderRadius: 12 }} onClick={handleSend} disabled={sending}>
-            {sending ? '발송 중...' : '📤 메일 발송하기'}
+          <ErrorNotice message={error} />
+          <button style={s.btnSend} onClick={handleSend} disabled={sending}>
+            {sending ? '발송 중...' : '메일 발송하기'}
           </button>
         </div>
 
         <div style={s.previewCol} className="r-preview-col">
           <div style={s.previewTitle}>실시간 미리보기</div>
           <div style={s.previewCard}>
-            {settings.testMode && <div style={{ background:'#fff3cd', borderRadius:6, padding:'5px 8px', marginBottom:8, fontSize:11, color:'#92400e' }}>🧪 테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
+            {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}><span style={s.pKey}>받는사람</span><span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo}</span></div>
-            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: '#666', fontSize: 12 }}>{previewCc || '없음'}</span></div>
+            <div style={s.pRow}><span style={s.pKey}>참조</span><span style={{ ...s.pVal, color: c.muted, fontSize: 12 }}>{previewCc || '없음'}</span></div>
             <div style={s.pRow}><span style={s.pKey}>제목</span><span style={{ ...s.pVal, fontWeight: 600 }}>{subject}</span></div>
-            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: '#667eea', fontSize: 12 }}>📎 {attachFile.name}</span></div>}
+            {attachFile && <div style={s.pRow}><span style={s.pKey}>첨부</span><span style={{ ...s.pVal, color: c.accent, fontSize: 12 }}>{attachFile.name}</span></div>}
             <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
             <pre style={s.preBody}>{body}</pre>
           </div>
