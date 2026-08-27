@@ -14,6 +14,10 @@ button {
   cursor: pointer;
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── 키보드 포커스 링 (접근성) ── */
 input:focus-visible,
 textarea:focus-visible,

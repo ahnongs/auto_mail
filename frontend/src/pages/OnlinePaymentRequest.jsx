@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { api, sendMail } from '../api'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import SendingScreen from '../components/SendingScreen'
 import ErrorNotice from '../components/ErrorNotice'
 import SuccessCard from '../components/SuccessCard'
 import { ps, c } from '../styles/pageStyles'
@@ -81,6 +82,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack, onNavigat
   }
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
+  if (sending) return <SendingScreen />
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 

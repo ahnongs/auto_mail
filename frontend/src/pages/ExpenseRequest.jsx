@@ -5,6 +5,7 @@ import { api, sendMail } from '../api'
 import MultiFileDropZone from '../components/MultiFileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
+import SendingScreen from '../components/SendingScreen'
 import ErrorNotice from '../components/ErrorNotice'
 import SuccessCard from '../components/SuccessCard'
 import { ps, c } from '../styles/pageStyles'
@@ -178,7 +179,7 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
         const attachments = processed.map(f => ({ data: f.data, name: f.name, type: f.type }))
         const bodyHtml = buildBodyHtml({ user, settings, items, total })
 
-        const mailRes = await sendMail({
+        const payload = {
           to, cc, subject,
           body: plainBody,
           bodyHtml,
@@ -187,18 +188,22 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
           signatureImageType: settings.logoImageType || '',
           mailType: 'expense',
           signatureHtml: buildSignatureHtml(settings, user.email),
-          sheetItems: items.map(it => ({
+        }
+        // 테스트 모드에서는 구글시트 자동입력 단계를 제외 (sheetItems 미전송 시 백엔드가 건너뜀)
+        if (!settings.testMode) {
+          payload.sheetItems = items.map(it => ({
             date: it.date,
             category: it.category,
             detail: it.detail,
             amount: it.amount,
-          })),
-          sheetUserName: user.name,
-          sheetDept: settings.dept || '',
-          sheetBank: settings.bank || '',
-          sheetAccount: settings.account || '',
-          sheetAccountHolder: settings.accountHolder || '',
-        }, settings)
+          }))
+          payload.sheetUserName = user.name
+          payload.sheetDept = settings.dept || ''
+          payload.sheetBank = settings.bank || ''
+          payload.sheetAccount = settings.account || ''
+          payload.sheetAccountHolder = settings.accountHolder || ''
+        }
+        const mailRes = await sendMail(payload, settings)
         if (mailRes?.data?.sheet_error) {
           console.error('[Sheets] 기록 실패:', mailRes.data.sheet_error)
         }
@@ -212,6 +217,7 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
   }
 
   if (pending) return <SendPendingScreen countdown={countdown} onCancel={cancel} onSendNow={sendNow} />
+  if (sending) return <SendingScreen />
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 

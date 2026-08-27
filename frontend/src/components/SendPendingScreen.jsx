@@ -1,3 +1,5 @@
+import { c } from '../styles/pageStyles'
+
 export default function SendPendingScreen({ countdown, onCancel, onSendNow, total = 10 }) {
   const pct = ((total - countdown) / total) * 100
 
@@ -23,33 +25,37 @@ export default function SendPendingScreen({ countdown, onCancel, onSendNow, tota
 const s = {
   page: {
     minHeight: '100vh',
-    background: '#f5f5f5',
+    background: c.canvas,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 24,
   },
   card: {
-    background: '#fff',
-    borderRadius: 20,
-    padding: '48px 36px',
+    background: c.surface,
+    border: `1px solid ${c.line}`,
+    borderRadius: 12,
+    padding: '44px 36px',
     textAlign: 'center',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.06)',
     width: '90%',
     maxWidth: 360,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 700,
+    letterSpacing: '-0.02em',
     marginBottom: 8,
-    color: '#1e1e2e',
+    color: c.inkStrong,
   },
   sub: {
     fontSize: 13,
-    color: '#999',
+    color: c.muted,
     marginBottom: 28,
   },
   barTrack: {
-    background: '#f0f0f0',
+    background: c.surface2,
+    border: `1px solid ${c.line}`,
     borderRadius: 6,
     height: 8,
     marginBottom: 32,
@@ -57,7 +63,7 @@ const s = {
   },
   barFill: {
     height: '100%',
-    background: '#667eea',
+    background: c.accent,
     borderRadius: 6,
     transition: 'width 1s linear',
   },
@@ -67,22 +73,22 @@ const s = {
   },
   cancelBtn: {
     flex: 1,
-    background: '#fff0f0',
-    color: '#dc2626',
-    border: '1.5px solid #fca5a5',
-    borderRadius: 12,
-    padding: '14px 0',
+    background: c.surface,
+    color: c.muted,
+    border: `1px solid ${c.line}`,
+    borderRadius: 6,
+    padding: '13px 0',
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: 600,
     cursor: 'pointer',
   },
   sendNowBtn: {
     flex: 1,
-    background: '#667eea',
+    background: c.accent,
     color: '#fff',
     border: 'none',
-    borderRadius: 12,
-    padding: '14px 0',
+    borderRadius: 6,
+    padding: '13px 0',
     fontSize: 14,
     fontWeight: 700,
     cursor: 'pointer',
