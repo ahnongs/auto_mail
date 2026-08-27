@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getScheduledMails, cancelScheduledMail } from '../api'
+import { c, mono } from '../styles/pageStyles'
 
 function formatSendAt(iso) {
   const d = new Date(iso)
@@ -106,7 +107,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
     <div style={s.container}>
       <header style={s.header} className="r-home-header">
         <div style={s.headerLeft}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ color: c.accent }}>
             <rect x="2.5" y="4.5" width="19" height="15" rx="1.5" /><path d="M3 6l9 6 9-6" />
           </svg>
           <span style={s.headerTitle}>사내 메일 서비스</span>
@@ -115,8 +116,8 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
           <img src={user.picture} alt={user.name} style={s.avatar} />
           <span style={s.userName}>{user.name}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }} onClick={onToggleTestMode}>
-            <span style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: testMode ? '#956400' : c.faint, fontWeight: 600, userSelect: 'none' }}>테스트</span>
-            <div style={{ width: 34, height: 18, borderRadius: 9, background: testMode ? '#f59e0b' : c.lineStrong, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+            <span style={{ fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: testMode ? c.accent : c.faint, fontWeight: 600, userSelect: 'none' }}>테스트</span>
+            <div style={{ width: 34, height: 18, borderRadius: 9, background: testMode ? c.accent : c.lineStrong, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
               <div style={{ position: 'absolute', top: 2, left: testMode ? 18 : 2, width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
             </div>
           </div>
@@ -409,26 +410,6 @@ const templates = [
   { id: 'payment2', name: '온라인결제', desc: '온라인 구매 결제 요청', ready: true },
   { id: 'design', name: '디자인요청', desc: '이미지 제작 요청', ready: false },
 ]
-
-// ── 색 토큰 (웜 모노크롬 + 보라 스팟 액센트) ──
-const c = {
-  canvas: '#F7F6F3',
-  surface: '#FFFFFF',
-  surface2: '#FBFBFA',
-  ink: '#2F3437',
-  inkStrong: '#1A1A1A',
-  muted: '#787774',
-  faint: '#9B9A96',
-  line: '#EAEAEA',
-  lineStrong: '#E0DFDB',
-  accent: '#667eea',
-  accentSoft: '#EEF0FD',
-  accentLine: '#DFE3FA',
-  warnBg: '#FBF3DB',
-  warnInk: '#956400',
-  warnLine: '#EFE2BD',
-}
-const mono = "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
 
 const s = {
   container: { minHeight: '100vh', background: c.canvas },

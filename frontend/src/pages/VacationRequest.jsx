@@ -270,7 +270,7 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
             <div style={s.recipientRow}>
               <span style={s.recipientKey}>받는사람</span>
               <span style={{ ...s.recipientVal, ...(settings.testMode ? { color: '#b45309', fontWeight: 600 } : {}) }}>
-                {previewTo || <span style={{ color: '#f59e0b' }}>설정 필요</span>}
+                {previewTo || <span style={{ color: c.warnInk }}>설정 필요</span>}
               </span>
             </div>
             <div style={s.recipientRow}>
@@ -345,7 +345,7 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
                     {dayBefore} {scheduleOpt.time}에 {settings.testMode ? settings.testEmail : R.leave}로 자동 발송
                   </div>
                 ) : (
-                  <div style={{ marginTop: 8, fontSize: 12, color: '#f59e0b' }}>
+                  <div style={{ marginTop: 8, fontSize: 12, color: c.warnInk }}>
                     휴가 날짜를 먼저 선택해주세요.
                   </div>
                 )}
@@ -367,7 +367,7 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
             {settings.testMode && <div style={s.testModeBanner}>테스트 모드 — 실제 수신자 대신 아래 주소로 발송됩니다</div>}
             <div style={s.pRow}>
               <span style={s.pKey}>받는사람</span>
-              <span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo || <span style={{ color: '#f59e0b' }}>설정 필요</span>}</span>
+              <span style={{ ...s.pVal, ...(settings.testMode ? {color:'#b45309',fontWeight:600} : {}) }}>{previewTo || <span style={{ color: c.warnInk }}>설정 필요</span>}</span>
             </div>
             <div style={s.pRow}>
               <span style={s.pKey}>참조</span>

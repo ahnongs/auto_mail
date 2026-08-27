@@ -40,6 +40,11 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [])
 
+  // 테스트 모드일 때 전체 팔레트를 웜톤으로 전환 (index.css의 [data-testmode])
+  useEffect(() => {
+    document.documentElement.setAttribute('data-testmode', testMode ? 'true' : 'false')
+  }, [testMode])
+
   // 브라우저 뒤로가기 지원
   useEffect(() => {
     history.replaceState({ page: 'home' }, '')
@@ -104,8 +109,8 @@ export default function App() {
   const handleLogout = () => { window.location.href = `${API_BASE}/auth/logout` }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F6F3' }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #EAEAEA', borderTop: '3px solid #667eea', borderRadius: '50%' }} />
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--canvas)' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid var(--line)', borderTop: '3px solid var(--accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
     </div>
   )
 

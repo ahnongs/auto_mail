@@ -1,3 +1,54 @@
+/* ── 색 팔레트 (기본: 잔잔한 쿨톤) ── */
+:root {
+  --canvas: #F3F5F8;
+  --surface: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --ink: #2A333F;
+  --ink-strong: #17212E;
+  --muted: #6A7482;
+  --faint: #99A3B0;
+  --line: #E4E8EF;
+  --line-strong: #D5DBE4;
+  --accent: #5B7FB3;
+  --accent-soft: #EAF1F8;
+  --accent-line: #D3E0EE;
+  /* 안내/주의 — 쿨 모드에선 블루 인포 */
+  --warn-bg: #EAF1F8;
+  --warn-ink: #35517A;
+  --warn-line: #D3E0EE;
+  --err-bg: #FDEBEC;
+  --err-ink: #9F2F2D;
+  --err-line: #F3D3D1;
+  --ok-bg: #E8F1EF;
+  --ok-ink: #2F6B60;
+  --ok-line: #D2E4E0;
+}
+
+/* ── 테스트 모드: 전체 웜톤으로 전환 ── */
+:root[data-testmode="true"] {
+  --canvas: #F7F4EF;
+  --surface: #FFFFFF;
+  --surface-2: #FBFAF6;
+  --ink: #3A332A;
+  --ink-strong: #2A2018;
+  --muted: #857C6E;
+  --faint: #A9A192;
+  --line: #ECE7DE;
+  --line-strong: #DED8CB;
+  --accent: #B4762E;
+  --accent-soft: #FBF1DF;
+  --accent-line: #EDD9B8;
+  --warn-bg: #FBF3DB;
+  --warn-ink: #956400;
+  --warn-line: #EFE2BD;
+  --err-bg: #FDEBEC;
+  --err-ink: #9F2F2D;
+  --err-line: #F3D3D1;
+  --ok-bg: #EDF3EC;
+  --ok-ink: #346538;
+  --ok-line: #D9E6D8;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -6,8 +57,8 @@
 
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #F7F6F3;
-  color: #2F3437;
+  background-color: var(--canvas);
+  color: var(--ink);
 }
 
 button {
@@ -23,7 +74,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 button:focus-visible {
-  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
   border-radius: 6px;
 }
@@ -31,7 +82,7 @@ button:focus-visible {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: #667eea;
+  border-color: var(--accent);
 }
 
 /* ── 모바일 input 확대 방지 (iOS) ── */

@@ -1,4 +1,5 @@
 import { API_BASE } from '../api'
+import { c, mono } from '../styles/pageStyles'
 
 export default function Login() {
   const handleGoogleLogin = () => {
@@ -10,7 +11,7 @@ export default function Login() {
       <div style={styles.card}>
         <div style={styles.eyebrow}>STARDOC · 사내 문서 발송</div>
         <div style={styles.logo}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ color: c.accent }}>
             <rect x="2.5" y="4.5" width="19" height="15" rx="1.5" /><path d="M3 6l9 6 9-6" />
           </svg>
         </div>
@@ -30,20 +31,6 @@ export default function Login() {
     </div>
   )
 }
-
-// ── Home과 동일한 색 토큰 ──
-const c = {
-  canvas: '#F7F6F3',
-  surface: '#FFFFFF',
-  inkStrong: '#1A1A1A',
-  muted: '#787774',
-  faint: '#9B9A96',
-  line: '#EAEAEA',
-  accent: '#667eea',
-  accentSoft: '#EEF0FD',
-  accentLine: '#DFE3FA',
-}
-const mono = "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
 
 const styles = {
   container: {
