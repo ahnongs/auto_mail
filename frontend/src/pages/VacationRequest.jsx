@@ -319,6 +319,8 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
           </div>
 
           {/* 하루 전날 사전 알림 예약 */}
+          {/* 하루 전날 사전 알림 예약 — 숨김처리 (추후 재노출 가능) */}
+          {false && (
           <div style={{ ...s.card, background: c.okBg, border: `1px solid ${c.okLine}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: scheduleOpt.enabled ? 12 : 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: c.okInk }}>하루 전날 사전 알림 예약</div>
@@ -352,6 +354,7 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
               </>
             )}
           </div>
+          )}
 
           <ErrorNotice message={error} />
 
