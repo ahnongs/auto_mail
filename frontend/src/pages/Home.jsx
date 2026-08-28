@@ -401,7 +401,7 @@ function Field({ label, required, children }) {
 }
 
 const templates = [
-  { id: 'vacation', name: '휴가신청', desc: '연차·반차·대체휴무 신청. 가장 많이 쓰는 양식이에요.', ready: true },
+  { id: 'vacation', name: '휴가신청', desc: '연차·반차·대체휴무 신청', ready: true },
   { id: 'expense', name: '개인비용 지출', desc: '지출결의서 작성 및 발송', ready: true },
   { id: 'payment', name: '입금요청', desc: '업체 대금 결제 요청', ready: true },
   { id: 'clockfix', name: '출퇴근 변경', desc: '플렉스 출퇴근 수정 요청', ready: true },
