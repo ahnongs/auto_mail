@@ -133,6 +133,10 @@ export default function ClockFixRequest({ user, settings, onBack, onNavigate }) 
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
+  const missing = []
+  if (!form.targetDate) missing.push('조정 희망 일자')
+  if (!form.reason) missing.push('조정 사유')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -191,6 +195,11 @@ export default function ClockFixRequest({ user, settings, onBack, onNavigate }) 
             </div>
           </div>
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '메일 발송하기'}

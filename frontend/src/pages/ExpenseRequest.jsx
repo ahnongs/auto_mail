@@ -27,6 +27,7 @@ const CATEGORY_GUIDE = [
 ]
 const todayStr = () => new Date().toISOString().slice(0, 10)
 const emptyItem = () => ({ date: todayStr(), category: CATEGORIES[0], detail: '', amount: '', note: '' })
+const formatAmount = (v) => { const n = String(v).replace(/[^\d]/g, ''); return n ? Number(n).toLocaleString() : '' }
 
 function buildBodyHtml({ user, settings, items, total }) {
   const borderOut  = '1px solid rgb(0,0,0)'
@@ -221,6 +222,10 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
+  const missing = []
+  if (items.some(it => !it.detail || !it.amount)) missing.push('지출 내역')
+  if (!attachFiles.length) missing.push('영수증')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -275,7 +280,7 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
                   </div>
                   <div style={{ flex: 1, marginLeft: 8 }}>
                     <div style={s.sublabel}>금액 (원)</div>
-                    <input style={s.input} placeholder="0" value={it.amount} onChange={e => setItem(i, 'amount', e.target.value)} />
+                    <input style={s.input} placeholder="0" inputMode="numeric" value={it.amount} onChange={e => setItem(i, 'amount', formatAmount(e.target.value))} />
                   </div>
                 </div>
                 <div style={{ marginTop: 8 }}>
@@ -312,6 +317,11 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
             <MultiFileDropZone files={attachFiles} onChange={setAttachFiles} />
           </div>
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '메일 발송하기'}

@@ -7,7 +7,7 @@ import SendPendingScreen from '../components/SendPendingScreen'
 import SendingScreen from '../components/SendingScreen'
 import ErrorNotice from '../components/ErrorNotice'
 import SuccessCard from '../components/SuccessCard'
-import { ps } from '../styles/pageStyles'
+import { ps, c } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
 
 
@@ -78,6 +78,11 @@ export default function InterviewRequest({ user, settings, onBack, onNavigate })
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
+  const missing = []
+  if (!form.dept) missing.push('부서')
+  if (!form.preferDate) missing.push('희망 일자')
+  if (!form.content) missing.push('면담 내용')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -125,6 +130,11 @@ export default function InterviewRequest({ user, settings, onBack, onNavigate })
             <textarea style={s.textarea} rows={5} placeholder="면담에서 논의하고 싶은 내용을 작성해주세요" value={form.content} onChange={e => set('content', e.target.value)} />
           </div>
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '메일 발송하기'}

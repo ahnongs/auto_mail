@@ -11,6 +11,8 @@ import { ps, c } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
 
 
+const formatAmount = (v) => { const n = String(v).replace(/[^\d]/g, ''); return n ? Number(n).toLocaleString() : '' }
+
 export default function OnlinePaymentRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
     dept: settings.dept || '',
@@ -86,6 +88,12 @@ export default function OnlinePaymentRequest({ user, settings, onBack, onNavigat
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
+  const missing = []
+  if (!form.vendor) missing.push('구입처')
+  if (!form.purpose) missing.push('구매 목적')
+  if (!form.items) missing.push('품목')
+  if (!form.amount) missing.push('금액')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -114,7 +122,7 @@ export default function OnlinePaymentRequest({ user, settings, onBack, onNavigat
             </div>
             <div style={{ marginTop: 12 }}>
               <div style={s.sublabel}>총 금액 <span style={{ color: '#ef4444' }}>*</span></div>
-              <input style={s.input} placeholder="예: 35,000" value={form.amount} onChange={e => set('amount', e.target.value)} />
+              <input style={s.input} placeholder="예: 35,000" inputMode="numeric" value={form.amount} onChange={e => set('amount', formatAmount(e.target.value))} />
             </div>
           </div>
 
@@ -148,6 +156,11 @@ export default function OnlinePaymentRequest({ user, settings, onBack, onNavigat
             <textarea style={s.textarea} rows={2} placeholder="없음" value={form.notes} onChange={e => set('notes', e.target.value)} />
           </div>
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '메일 발송하기'}

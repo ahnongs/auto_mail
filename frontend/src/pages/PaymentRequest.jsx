@@ -14,6 +14,7 @@ import { readFileAsBase64 } from '../utils/fileUtils'
 
 
 const TODAY = new Date().toISOString().slice(0, 10)
+const formatAmount = (v) => { const n = String(v).replace(/[^\d]/g, ''); return n ? Number(n).toLocaleString() : '' }
 
 export default function PaymentRequest({ user, settings, onBack, onNavigate }) {
   const [form, setForm] = useState({
@@ -99,6 +100,12 @@ export default function PaymentRequest({ user, settings, onBack, onNavigate }) {
 
   if (sent) return <SuccessCard to={previewTo} onBack={onBack} onNavigate={onNavigate} />
 
+  const missing = []
+  if (!form.vendor) missing.push('업체명')
+  if (!form.amount) missing.push('금액')
+  if (!form.accountNumber) missing.push('계좌번호')
+  if (!attachFile) missing.push('거래내역서')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -141,7 +148,7 @@ export default function PaymentRequest({ user, settings, onBack, onNavigate }) {
             </div>
             <div style={{ marginTop: 12 }}>
               <div style={s.sublabel}>금액 (VAT 포함) <span style={{ color: '#ef4444' }}>*</span></div>
-              <input style={s.input} placeholder="예: 110,000" value={form.amount} onChange={e => set('amount', e.target.value)} />
+              <input style={s.input} placeholder="예: 110,000" inputMode="numeric" value={form.amount} onChange={e => set('amount', formatAmount(e.target.value))} />
             </div>
           </div>
 
@@ -179,6 +186,11 @@ export default function PaymentRequest({ user, settings, onBack, onNavigate }) {
             <FileDropZone file={attachFile} onChange={setAttachFile} />
           </div>
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>
             {sending ? '발송 중...' : '메일 발송하기'}

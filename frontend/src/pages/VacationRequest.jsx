@@ -196,6 +196,11 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
     </SuccessCard>
   )
 
+  const missing = []
+  if (!form.startDate) missing.push('휴가 날짜')
+  if (!form.dept) missing.push('부서')
+  if (!attachFile) missing.push('플렉스 캡처')
+
   return (
     <div style={s.page}>
       <header style={s.header} className="r-header">
@@ -356,6 +361,11 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
           </div>
           )}
 
+          {missing.length > 0 && (
+            <div style={{ fontSize: 12, color: c.muted, textAlign: 'center' }}>
+              남은 필수 항목: <span style={{ color: c.warnInk, fontWeight: 600 }}>{missing.join(' · ')}</span>
+            </div>
+          )}
           <ErrorNotice message={error} />
 
           <button style={s.btnSend} onClick={handleSend} disabled={sending}>

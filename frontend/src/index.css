@@ -6,7 +6,7 @@
   --ink: #2A333F;
   --ink-strong: #17212E;
   --muted: #6A7482;
-  --faint: #99A3B0;
+  --faint: #7B8593;
   --line: #E4E8EF;
   --line-strong: #D5DBE4;
   --accent: #5B7FB3;
@@ -32,7 +32,7 @@
   --ink: #3A332A;
   --ink-strong: #2A2018;
   --muted: #857C6E;
-  --faint: #A9A192;
+  --faint: #8B8373;
   --line: #ECE7DE;
   --line-strong: #DED8CB;
   --accent: #B4762E;
@@ -140,6 +140,7 @@ input[type="time"] {
   .r-preview-col {
     width: 100% !important;
     position: static !important;
+    order: -1;
   }
 
   /* 헤더 */

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getScheduledMails, cancelScheduledMail } from '../api'
 import { c, mono } from '../styles/pageStyles'
 
@@ -54,6 +54,30 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
   useEffect(() => {
     getScheduledMails().then(r => setScheduledMails(r.data)).catch(() => {})
   }, [])
+
+  // 설정 모달: Esc로 닫기 + 포커스 트랩 + 열릴 때 첫 입력에 포커스
+  const modalRef = useRef(null)
+  useEffect(() => {
+    if (!showSettings) return
+    const el = modalRef.current
+    const getFocusable = () => el
+      ? Array.from(el.querySelectorAll('input, select, textarea, button, [tabindex]:not([tabindex="-1"])'))
+          .filter(n => !n.disabled && n.offsetParent !== null)
+      : []
+    getFocusable()[0]?.focus()
+    const onKey = (e) => {
+      if (e.key === 'Escape') { setShowSettings(false); return }
+      if (e.key === 'Tab') {
+        const items = getFocusable()
+        if (!items.length) return
+        const first = items[0], last = items[items.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [showSettings])
   const [confirmCancelId, setConfirmCancelId] = useState(null)
   const handleCancelSchedule = (id) => setConfirmCancelId(id)
   const handleConfirmCancel = async () => {
@@ -61,6 +85,12 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
     setScheduledMails(prev => prev.filter(m => m.id !== confirmCancelId))
     setConfirmCancelId(null)
   }
+  useEffect(() => {
+    if (!confirmCancelId) return
+    const onKey = (e) => { if (e.key === 'Escape') setConfirmCancelId(null) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [confirmCancelId])
 
   const handleSave = () => {
     const normalized = {
@@ -213,7 +243,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
       {/* 설정 모달 */}
       {showSettings && (
         <div style={s.overlay} onClick={() => setShowSettings(false)}>
-          <div style={s.modal} className="r-modal" onClick={e => e.stopPropagation()}>
+          <div ref={modalRef} style={s.modal} className="r-modal" onClick={e => e.stopPropagation()}>
             <h2 style={s.modalTitle}>설정</h2>
             {settingsHint && (
               <div style={{ background: c.warnBg, border: `1px solid ${c.warnLine}`, borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: c.warnInk }}>
