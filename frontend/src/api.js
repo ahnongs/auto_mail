@@ -24,9 +24,27 @@ function applyTestMode(params, settings) {
   return { ...params, to: testEmail, cc: '', testMode: true, testEmail }
 }
 
+// Gmail 총 메일 용량 한도(약 25MB). base64 첨부/이미지의 합이 넘으면
+// 발송 시 원시 에러 대신 친절한 메시지로 미리 막는다.
+const MAX_ATTACH_BASE64 = 25 * 1024 * 1024
+function checkAttachmentSize(params) {
+  let total = 0
+  const add = (v) => { if (typeof v === 'string') total += v.length }
+  add(params.attachmentData)
+  add(params.bodyImageData)
+  add(params.signatureImageData)
+  add(params.fwd_body_image_data)
+  ;(params.attachments || []).forEach(a => add(a?.data))
+  ;(params.bodyImages || []).forEach(a => add(a?.data))
+  if (total > MAX_ATTACH_BASE64) {
+    throw new Error('첨부파일 용량이 너무 큽니다. 전체 25MB 이하로 줄여주세요.')
+  }
+}
+
 export function sendMail(params, settings) {
   let payload
   try {
+    checkAttachmentSize(params)
     payload = applyTestMode(params, settings)
   } catch (e) {
     return Promise.reject(e)
@@ -37,6 +55,7 @@ export function sendMail(params, settings) {
 export function scheduleMail(params, settings) {
   let payload
   try {
+    checkAttachmentSize(params)
     payload = applyTestMode(params, settings)
   } catch (e) {
     return Promise.reject(e)

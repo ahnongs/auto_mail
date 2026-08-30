@@ -11,8 +11,15 @@ from .config import (
 )
 from .storage import load_user, save_user
 import httpx
+import secrets
 
 router = APIRouter()
+
+# 프론트가 https면 크로스도메인(vercel↔onrender) 환경으로 보고 SameSite=None; Secure 로
+# 세션 쿠키를 발급해야 크로스사이트 XHR 에 쿠키가 실린다. 로컬(http)은 Lax 로 둔다.
+_IS_HTTPS        = FRONTEND_URL.startswith("https://")
+_COOKIE_SAMESITE = "none" if _IS_HTTPS else "lax"
+_COOKIE_SECURE   = _IS_HTTPS
 
 
 def create_flow():
@@ -83,13 +90,28 @@ def get_valid_credentials(uid: str) -> Credentials:
 
 @router.get("/auth/google")
 def google_login():
+    # CSRF 방어: 임의 state 를 쿠키에 심고 콜백에서 대조한다.
+    state = secrets.token_urlsafe(32)
     flow = create_flow()
-    auth_url, _ = flow.authorization_url(access_type="offline", prompt="consent")
-    return RedirectResponse(auth_url)
+    auth_url, _ = flow.authorization_url(access_type="offline", prompt="consent", state=state)
+    resp = RedirectResponse(auth_url)
+    resp.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        samesite=_COOKIE_SAMESITE,
+        secure=_COOKIE_SECURE,
+        max_age=600,
+    )
+    return resp
 
 
 @router.get("/auth/callback")
-async def google_callback(code: str):
+async def google_callback(code: str, state: str = "", oauth_state: str = Cookie(default=None)):
+    # state 대조 (CSRF 방어)
+    if not oauth_state or not state or not secrets.compare_digest(state, oauth_state):
+        raise HTTPException(status_code=400, detail="잘못된 로그인 요청입니다. 다시 시도해주세요.")
+
     flow = create_flow()
     flow.fetch_token(code=code)
     credentials = flow.credentials
@@ -128,10 +150,11 @@ async def google_callback(code: str):
         key="session",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=FRONTEND_URL.startswith("https://"),
+        samesite=_COOKIE_SAMESITE,
+        secure=_COOKIE_SECURE,
         max_age=60 * 60 * 24 * 30,
     )
+    response.delete_cookie("oauth_state", samesite=_COOKIE_SAMESITE, secure=_COOKIE_SECURE)
     return response
 
 
@@ -153,5 +176,5 @@ def get_me(session: str = Cookie(default=None)):
 @router.get("/auth/logout")
 def logout():
     response = RedirectResponse(url=FRONTEND_URL)
-    response.delete_cookie("session")
+    response.delete_cookie("session", samesite=_COOKIE_SAMESITE, secure=_COOKIE_SECURE)
     return response

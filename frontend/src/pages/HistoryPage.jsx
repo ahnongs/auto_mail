@@ -83,7 +83,7 @@ export default function HistoryPage({ onBack }) {
               ? `https://mail.google.com/mail/u/0/#sent/${mail.message_id}`
               : null
             return (
-              <div key={i} style={s.item}>
+              <div key={mail.message_id || mail.id || i} style={s.item}>
                 <div style={s.itemLeft}>
                   <span style={s.badge}>{meta.label}</span>
                   <div style={s.subject}>{mail.subject}</div>

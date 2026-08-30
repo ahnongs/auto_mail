@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api, sendMail } from '../api'
+import { sendMail } from '../api'
 import MultiFileDropZone from '../components/MultiFileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
@@ -10,6 +10,7 @@ import ErrorNotice from '../components/ErrorNotice'
 import SuccessCard from '../components/SuccessCard'
 import { ps, c } from '../styles/pageStyles'
 import { getMMDD } from '../utils/dateUtils'
+import { readFileAsBase64 } from '../utils/fileUtils'
 
 
 const CATEGORIES = ['복리후생비(식대)', '복리후생비(회식/간식)', '여비교통비(출장/외근)', '접대비(고객사 접대)', '운반비(퀵/택배 등)', '소모품비(사무용품/도서인쇄)', '수선비(비품수리/청소)', '지급수수료', '광고선전비']
@@ -164,14 +165,8 @@ export default function ExpenseRequest({ user, settings, onBack, onNavigate }) {
     schedule(async () => {
       setSending(true)
       try {
-        const readFile = (file) => new Promise(resolve => {
-          const reader = new FileReader()
-          reader.onload = e => resolve(e.target.result.split(',')[1])
-          reader.readAsDataURL(file)
-        })
-
         const processed = await Promise.all(attachFiles.map(async f => ({
-          data: await readFile(f),
+          data: await readFileAsBase64(f),
           name: f.name,
           type: f.type,
         })))
