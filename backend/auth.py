@@ -15,10 +15,11 @@ import secrets
 
 router = APIRouter()
 
-# 프론트가 https면 크로스도메인(vercel↔onrender) 환경으로 보고 SameSite=None; Secure 로
-# 세션 쿠키를 발급해야 크로스사이트 XHR 에 쿠키가 실린다. 로컬(http)은 Lax 로 둔다.
+# 프론트와 백엔드를 same-origin('/api' 프록시)으로 붙이므로 세션 쿠키는 1st-party 가 된다.
+# 따라서 SameSite=Lax 로 충분하며, 서드파티 쿠키 차단(Safari ITP 등)에 영향받지 않아
+# 모든 브라우저에서 동일하게 동작한다. https 일 때만 Secure 를 붙인다.
 _IS_HTTPS        = FRONTEND_URL.startswith("https://")
-_COOKIE_SAMESITE = "none" if _IS_HTTPS else "lax"
+_COOKIE_SAMESITE = "lax"
 _COOKIE_SECURE   = _IS_HTTPS
 
 

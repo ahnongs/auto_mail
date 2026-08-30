@@ -1,6 +1,11 @@
 import axios from 'axios'
 
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// same-origin 프록시('/api')를 기본값으로 사용한다.
+// - 배포: vercel.json 의 rewrite('/api/* → 백엔드')가 처리 → 브라우저엔 전부 vercel.app
+// - 개발: vite.config.js 의 dev 프록시('/api → localhost:8000')가 처리
+// 덕분에 세션 쿠키가 1st-party 가 되어 Safari/Chrome 등 모든 브라우저에서 동일 동작.
+// (특수한 경우에만 VITE_API_URL 로 직접 백엔드 주소를 덮어쓸 수 있음 — 권장하지 않음)
+export const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export const api = axios.create({ baseURL: API_BASE, withCredentials: true })
 
