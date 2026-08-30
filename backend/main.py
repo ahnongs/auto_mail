@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime
-from .config import FRONTEND_URL
-from .auth import router as auth_router
-from .mail import router as mail_router, do_send_scheduled
+from config import FRONTEND_URL
+from auth import router as auth_router
+from mail import router as mail_router, do_send_scheduled
 
 app = FastAPI()
 

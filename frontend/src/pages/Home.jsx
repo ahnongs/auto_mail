@@ -371,6 +371,7 @@ export default function Home({ user, onLogout, onNavigate, settings, onSaveSetti
                         set('logoImageData', data)
                         set('logoImageType', meta.match(/:(.*?);/)[1])
                       }
+                      reader.onerror = () => alert('로고 이미지를 읽지 못했습니다. 다시 시도해주세요.')
                       reader.readAsDataURL(f)
                     }} />
                 </label>

@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api, sendMail } from '../api'
+import { sendMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
@@ -9,6 +9,7 @@ import SendingScreen from '../components/SendingScreen'
 import ErrorNotice from '../components/ErrorNotice'
 import SuccessCard from '../components/SuccessCard'
 import { ps, c } from '../styles/pageStyles'
+import { readFileAsBase64 } from '../utils/fileUtils'
 
 
 const URGENCY = ['일반', '긴급']
@@ -79,11 +80,7 @@ export default function DesignRequest({ user, settings, onBack, onNavigate }) {
           signatureHtml: buildSignatureHtml(settings, user.email),
         }
         if (attachFile) {
-          payload.attachmentData = await new Promise(resolve => {
-            const reader = new FileReader()
-            reader.onload = e => resolve(e.target.result.split(',')[1])
-            reader.readAsDataURL(attachFile)
-          })
+          payload.attachmentData = await readFileAsBase64(attachFile)
           payload.attachmentName = attachFile.name
           payload.attachmentType = attachFile.type
         }

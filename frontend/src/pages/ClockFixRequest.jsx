@@ -1,7 +1,7 @@
 import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api, sendMail } from '../api'
+import { sendMail } from '../api'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
 import SendingScreen from '../components/SendingScreen'
@@ -15,7 +15,7 @@ const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 function formatDate(dateStr) {
   if (!dateStr) return '(미입력)'
-  const d = new Date(dateStr)
+  const d = new Date(dateStr + 'T00:00:00')
   return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, '0')}월 ${String(d.getDate()).padStart(2, '0')}일 (${DAYS[d.getDay()]}요일)`
 }
 

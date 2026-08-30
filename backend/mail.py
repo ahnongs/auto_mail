@@ -10,9 +10,10 @@ from email.mime.image import MIMEImage
 from email import encoders
 from typing import Any, Dict
 from datetime import datetime, timezone
-from .config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-from .auth import get_uid, get_valid_credentials
-from .storage import load_user, load_scheduled, save_scheduled, add_scheduled, delete_scheduled, add_sent_mail, get_sent_mails
+from zoneinfo import ZoneInfo
+from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+from auth import get_uid, get_valid_credentials
+from storage import load_user, load_scheduled, save_scheduled, add_scheduled, delete_scheduled, add_sent_mail, get_sent_mails
 import base64
 import uuid
 import re
@@ -49,6 +50,31 @@ def _build_attachment_part(att):
 router = APIRouter()
 
 
+def _clean_header(value: str) -> str:
+    """메일 헤더 인젝션 방지: 값에 섞인 CR/LF 를 제거한다.
+
+    to/cc/subject 에 사용자 입력이 들어가므로, 개행을 통해 Bcc 등 추가 헤더를
+    주입하는 것을 막는다."""
+    if not value:
+        return value
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+
+def _enforce_test_mode(to: str, cc: str, test_mode: bool, test_email: str):
+    """테스트 모드 서버측 2차 방어선.
+
+    프론트엔드(api.js)가 이미 to/cc 를 교체하지만, 실수(settings 인자 누락,
+    새 발송 경로 추가 등)로 실제 수신자(대표/파트장/본부장 등)에게 나가는 것을
+    서버에서 한 번 더 막는다. 테스트 모드면 to 를 테스트 이메일로 강제하고
+    cc 를 제거하며, 테스트 이메일이 유효하지 않으면 발송을 거부한다.
+    """
+    if not test_mode:
+        return to, cc
+    if not test_email or "@" not in test_email:
+        raise HTTPException(status_code=400, detail="테스트 모드에서는 유효한 테스트 이메일이 필요합니다.")
+    return test_email, ""
+
+
 # ── 설정 ──
 
 @router.get("/settings")
@@ -63,7 +89,7 @@ def get_settings(session: str = Cookie(default=None)):
 def save_settings(body: Dict[str, Any], session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
-    from .storage import save_user
+    from storage import save_user
     uid = get_uid(session)
     existing = load_user(uid)
     existing.update(body)
@@ -107,6 +133,8 @@ class MailRequest(BaseModel):
     sheetBank: str = ""
     sheetAccount: str = ""
     sheetAccountHolder: str = ""
+    testMode: bool = False
+    testEmail: str = ""
 
 
 def build_mime_message(req: MailRequest) -> MIMEMultipart:
@@ -184,10 +212,10 @@ def build_mime_message(req: MailRequest) -> MIMEMultipart:
             msg = outer
         msg.attach(part)
 
-    msg["to"] = req.to
-    msg["subject"] = req.subject
+    msg["to"] = _clean_header(req.to)
+    msg["subject"] = _clean_header(req.subject)
     if req.cc:
-        msg["cc"] = req.cc
+        msg["cc"] = _clean_header(req.cc)
 
     return msg
 
@@ -199,6 +227,9 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
 
     uid = get_uid(session)
     creds = get_valid_credentials(uid)
+
+    # 테스트 모드 2차 방어선: 실제 수신자에게 나가지 않도록 서버에서 강제
+    req.to, req.cc = _enforce_test_mode(req.to, req.cc, req.testMode, req.testEmail)
 
     try:
         service = build("gmail", "v1", credentials=creds)
@@ -222,18 +253,20 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
                 sheet_error = str(sheet_err)
                 print(f"[Sheets] 기록 실패: {sheet_err}")
 
-        try:
-            add_sent_mail({
-                "id": str(uuid.uuid4()),
-                "uid": uid,
-                "type": req.mailType,
-                "subject": req.subject,
-                "to": req.to,
-                "sent_at": datetime.now().isoformat(),
-                "message_id": result.get("id", ""),
-            })
-        except Exception as hist_err:
-            print(f"[History] 기록 실패: {hist_err}")
+        # 테스트 발송은 '보낸 메일' 이력에 남기지 않는다 (실제 발송과 혼동 방지)
+        if not req.testMode:
+            try:
+                add_sent_mail({
+                    "id": str(uuid.uuid4()),
+                    "uid": uid,
+                    "type": req.mailType,
+                    "subject": req.subject,
+                    "to": req.to,
+                    "sent_at": datetime.now().isoformat(),
+                    "message_id": result.get("id", ""),
+                })
+            except Exception as hist_err:
+                print(f"[History] 기록 실패: {hist_err}")
 
         return {"status": "ok", "message_id": result.get("id", ""), "sheet_error": sheet_error}
     except Exception as e:
@@ -337,6 +370,8 @@ class ScheduleMailRequest(BaseModel):
     signatureHtml: str = ""
     signatureImageData: str = ""
     signatureImageType: str = ""
+    testMode: bool = False
+    testEmail: str = ""
 
 
 @router.post("/mail/schedule")
@@ -344,12 +379,16 @@ def schedule_mail(req: ScheduleMailRequest, session: str = Cookie(default=None))
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     uid = get_uid(session)
+    # 테스트 모드 2차 방어선: 저장 시점에 수신자를 강제 교체
+    req.to, req.cc = _enforce_test_mode(req.to, req.cc, req.testMode, req.testEmail)
     item = {
         "id": str(uuid.uuid4()),
         "uid": uid,
         "send_at": req.send_at,
         "to": req.to,
         "cc": req.cc,
+        "test_mode": req.testMode,
+        "test_email": req.testEmail,
         "subject": req.subject,
         "body": req.body,
         "cover_body": req.cover_body,
@@ -388,13 +427,18 @@ def delete_scheduled_mail(schedule_id: str, session: str = Cookie(default=None))
 # ── 스케줄러 발송 로직 ──
 
 async def do_send_scheduled():
-    now = datetime.now()
+    # 예약 시각(send_at)은 KST 기준 naive 문자열이므로 KST 로 통일해 비교한다.
+    # (서버 로컬 TZ 가 UTC 여도 밀리지 않도록)
+    kst = ZoneInfo("Asia/Seoul")
+    now = datetime.now(kst)
     pending = load_scheduled()
     remaining = []
 
     for item in pending:
         try:
             send_at = datetime.fromisoformat(item["send_at"])
+            if send_at.tzinfo is None:
+                send_at = send_at.replace(tzinfo=kst)
         except Exception:
             continue
 
@@ -500,10 +544,16 @@ async def do_send_scheduled():
             else:
                 msg = MIMEText(plain_body, "plain", "utf-8")
 
-            msg["to"] = item["to"]
-            msg["subject"] = item["subject"]
-            if item.get("cc"):
-                msg["cc"] = item["cc"]
+            # 테스트 모드 최종 방어선: 예약 발송 시점에도 실제 수신자로 나가지 않도록 강제
+            send_to, send_cc = _enforce_test_mode(
+                item["to"], item.get("cc", ""),
+                item.get("test_mode", False), item.get("test_email", ""),
+            )
+
+            msg["to"] = _clean_header(send_to)
+            msg["subject"] = _clean_header(item["subject"])
+            if send_cc:
+                msg["cc"] = _clean_header(send_cc)
 
             raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
             service.users().messages().send(userId="me", body={"raw": raw}).execute()

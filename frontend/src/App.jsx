@@ -36,7 +36,11 @@ export default function App() {
 
   useEffect(() => {
     api.get('/auth/me')
-      .then(res => setUser(res.data))
+      .then(res => {
+        setUser(res.data)
+        // 테스트 수신 이메일은 기본적으로 본인 메일로 세팅 (비어 있을 때만)
+        if (res.data?.email) setTestEmail(e => e || res.data.email)
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
   }, [])

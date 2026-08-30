@@ -1,4 +1,4 @@
-from .config import supabase, SETTINGS_FILE, SENT_FILE, SCHEDULED_FILE
+from config import supabase, SETTINGS_FILE, SENT_FILE, SCHEDULED_FILE
 import json
 import os
 
