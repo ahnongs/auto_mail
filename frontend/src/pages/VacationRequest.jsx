@@ -1,7 +1,7 @@
 ﻿import { buildSignatureHtml } from '../utils/signature'
 import { R } from '../config/recipients'
 import { useState, useMemo } from 'react'
-import { api, sendMail } from '../api'
+import { sendMail, scheduleMail } from '../api'
 import FileDropZone from '../components/FileDropZone'
 import { useUndoSend } from '../hooks/useUndoSend'
 import SendPendingScreen from '../components/SendPendingScreen'
@@ -151,9 +151,9 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
               `감사합니다.`,
             ].join('\n')
 
-            await api.post('/mail/schedule', {
+            await scheduleMail({
               send_at: scheduleSendAt,
-              to: settings.testMode ? settings.testEmail : R.leave,
+              to: R.leave,
               cc: '',
               subject: `Fwd: ${subject}`,
               body: coverBody,
@@ -164,7 +164,7 @@ export default function VacationRequest({ user, settings, onBack, onNavigate }) 
               signatureHtml: buildSignatureHtml(settings, user.email),
               signatureImageData: settings.logoImageData || '',
               signatureImageType: settings.logoImageType || '',
-            })
+            }, settings)
             setScheduleResult(scheduleSendAt)
           } catch (e) {
             console.error('예약 등록 실패:', e)

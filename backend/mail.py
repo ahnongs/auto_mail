@@ -49,6 +49,21 @@ def _build_attachment_part(att):
 router = APIRouter()
 
 
+def _enforce_test_mode(to: str, cc: str, test_mode: bool, test_email: str):
+    """테스트 모드 서버측 2차 방어선.
+
+    프론트엔드(api.js)가 이미 to/cc 를 교체하지만, 실수(settings 인자 누락,
+    새 발송 경로 추가 등)로 실제 수신자(대표/파트장/본부장 등)에게 나가는 것을
+    서버에서 한 번 더 막는다. 테스트 모드면 to 를 테스트 이메일로 강제하고
+    cc 를 제거하며, 테스트 이메일이 유효하지 않으면 발송을 거부한다.
+    """
+    if not test_mode:
+        return to, cc
+    if not test_email or "@" not in test_email:
+        raise HTTPException(status_code=400, detail="테스트 모드에서는 유효한 테스트 이메일이 필요합니다.")
+    return test_email, ""
+
+
 # ── 설정 ──
 
 @router.get("/settings")
@@ -107,6 +122,8 @@ class MailRequest(BaseModel):
     sheetBank: str = ""
     sheetAccount: str = ""
     sheetAccountHolder: str = ""
+    testMode: bool = False
+    testEmail: str = ""
 
 
 def build_mime_message(req: MailRequest) -> MIMEMultipart:
@@ -199,6 +216,9 @@ def send_mail(req: MailRequest, session: str = Cookie(default=None)):
 
     uid = get_uid(session)
     creds = get_valid_credentials(uid)
+
+    # 테스트 모드 2차 방어선: 실제 수신자에게 나가지 않도록 서버에서 강제
+    req.to, req.cc = _enforce_test_mode(req.to, req.cc, req.testMode, req.testEmail)
 
     try:
         service = build("gmail", "v1", credentials=creds)
@@ -337,6 +357,8 @@ class ScheduleMailRequest(BaseModel):
     signatureHtml: str = ""
     signatureImageData: str = ""
     signatureImageType: str = ""
+    testMode: bool = False
+    testEmail: str = ""
 
 
 @router.post("/mail/schedule")
@@ -344,12 +366,16 @@ def schedule_mail(req: ScheduleMailRequest, session: str = Cookie(default=None))
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     uid = get_uid(session)
+    # 테스트 모드 2차 방어선: 저장 시점에 수신자를 강제 교체
+    req.to, req.cc = _enforce_test_mode(req.to, req.cc, req.testMode, req.testEmail)
     item = {
         "id": str(uuid.uuid4()),
         "uid": uid,
         "send_at": req.send_at,
         "to": req.to,
         "cc": req.cc,
+        "test_mode": req.testMode,
+        "test_email": req.testEmail,
         "subject": req.subject,
         "body": req.body,
         "cover_body": req.cover_body,
@@ -500,10 +526,16 @@ async def do_send_scheduled():
             else:
                 msg = MIMEText(plain_body, "plain", "utf-8")
 
-            msg["to"] = item["to"]
+            # 테스트 모드 최종 방어선: 예약 발송 시점에도 실제 수신자로 나가지 않도록 강제
+            send_to, send_cc = _enforce_test_mode(
+                item["to"], item.get("cc", ""),
+                item.get("test_mode", False), item.get("test_email", ""),
+            )
+
+            msg["to"] = send_to
             msg["subject"] = item["subject"]
-            if item.get("cc"):
-                msg["cc"] = item["cc"]
+            if send_cc:
+                msg["cc"] = send_cc
 
             raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
             service.users().messages().send(userId="me", body={"raw": raw}).execute()
