@@ -11,9 +11,9 @@ from email import encoders
 from typing import Any, Dict
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-from .config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-from .auth import get_uid, get_valid_credentials
-from .storage import load_user, load_scheduled, save_scheduled, add_scheduled, delete_scheduled, add_sent_mail, get_sent_mails
+from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+from auth import get_uid, get_valid_credentials
+from storage import load_user, load_scheduled, save_scheduled, add_scheduled, delete_scheduled, add_sent_mail, get_sent_mails
 import base64
 import uuid
 import re
@@ -89,7 +89,7 @@ def get_settings(session: str = Cookie(default=None)):
 def save_settings(body: Dict[str, Any], session: str = Cookie(default=None)):
     if not session:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
-    from .storage import save_user
+    from storage import save_user
     uid = get_uid(session)
     existing = load_user(uid)
     existing.update(body)

@@ -5,11 +5,11 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request as GoogleRequest
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
-from .config import (
+from config import (
     GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI,
     SECRET_KEY, FRONTEND_URL, SCOPES,
 )
-from .storage import load_user, save_user
+from storage import load_user, save_user
 import httpx
 import secrets
 
